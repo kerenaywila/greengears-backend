@@ -1,3 +1,5 @@
+const crypto = require('crypto');
+
 const mongoose = require("mongoose")
 const Schema = mongoose.Schema
 
@@ -19,17 +21,20 @@ const userSchema = new mongoose.Schema({
       ref: 'Equipment',
     },
   ],
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
+otp: String,
+otpExpires: Date,
+isVerified: { type: Boolean, default: false },
+createdAt: { type: Date, default: Date.now }
 });
 
+userSchema.methods.generateOTP = function() {
+  this.otp = crypto.randomInt(100000, 999999).toString();
+  this.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
+};
 
+const Farmer = mongoose.model('Farmer', userSchema);
 
-const User = mongoose.model('User', userSchema);
-
-module.exports =  User;
+module.exports =  Farmer;
 // Set up Node.js project with Express and Mongoose.
 // Configure MongoDB (Atlas/local).
 // Implement User Signup API for User and Admin with OTP email verification using Nodemailer.
