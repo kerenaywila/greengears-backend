@@ -1,4 +1,5 @@
 const { check, validationResult } = require('express-validator');
+const jwt = require("jsonwebtoken");
 
 // Validate Registrstion
 const validateRegistration = [
@@ -25,5 +26,10 @@ const validateRegistration = [
       next();
     }
   ];
+
+
   
   module.exports = { validateRegistration }
+
+  
+
