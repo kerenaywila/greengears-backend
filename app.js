@@ -5,6 +5,7 @@ const mongoose = require("mongoose")
 
 const user_router = require('./src/routes/users');
 const admin_router = require('./src/routes/admin');
+const equipmentRoutes = require("./src/routes/equipment");
 
 const cors = require('cors')
 const connectToDB = require("./db")
@@ -30,6 +31,7 @@ app.get('/', (req, res)=>{
 
 app.use('/api', user_router);
 app.use('/api', admin_router);
+app.use('/api', equipmentRoutes);
 
 app.use((req, res) => {
     res.status(404).json({
