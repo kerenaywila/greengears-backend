@@ -185,10 +185,11 @@ exports.resendOtp_admin = async (req, res) => {
         }
 
         // Generate new OTP and update expiration
-        const otp = user.generateOTP();
-        user.otp = otp;
-        user.otpExpires = new Date(Date.now() + 10 * 60 * 1000); // Extend expiration time
-        await user.save();
+      // Generate new OTP and update expiration
+      user.generateOTP();
+      user.otpExpires = new Date(Date.now() + 5 * 60 * 1000); // Extend expiration time
+      await user.save();
+
 
         // Send the new OTP email
         await sendMail(
