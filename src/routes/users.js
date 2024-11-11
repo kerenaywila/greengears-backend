@@ -14,7 +14,6 @@ module.exports = router;
 const validateForgotPassword = require("../middleware/auth");
 const forgotPassword = require("../controllers/authController");
 
-const router = express.Router();
 
 router.post("/forgot-password", validateToken, validateForgotPassword, forgotPassword);
 
