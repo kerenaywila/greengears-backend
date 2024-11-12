@@ -1,6 +1,6 @@
 const bcryptjs = require("bcryptjs")
 // controllers/bookingController.js
-const Booking = require("../modules/booking");
+const Booking = require("../models/booking");
 
 // Create Booking
 exports.createBooking = async (req, res) => {
