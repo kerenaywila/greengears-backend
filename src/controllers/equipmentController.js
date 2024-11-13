@@ -1,7 +1,7 @@
 const bcryptjs = require("bcryptjs")
 const jwt = require("jsonwebtoken")
-
-const Equipment = require("../modules/equipment");
+const Equipment = require("../models/equipment");
+const upload = require("../utils/multerConfig");
 
 exports.equipmentFxn = async (req, res) => {
 try {
@@ -46,3 +46,26 @@ try {
     res.status(500).json({ message: "Server Error", error });
 }
 };
+
+// get single equipment details by ID
+exports.getSingleEquipment = async (req, res) => {
+  try {
+    const equipmentId = req.params.id;
+
+    const equipment = await Equipment.findById(equipmentId);
+
+    if (!equipment) {
+      return res.status(400).json({ message: 'Equipment not found' });
+    }
+
+    res.status(200).json({
+      message: 'Equipment details retrieved successfully',
+      data: equipment,
+    });
+  } catch (error) {
+    res.status(500).json({message: error.message});
+  }
+};
+
+
+

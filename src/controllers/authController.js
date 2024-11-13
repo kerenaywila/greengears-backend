@@ -1,7 +1,7 @@
 const bcryptjs = require("bcryptjs")
 const jwt = require('jsonwebtoken');
-const Farmer = require('../modules/users');
-const Admin = require('../modules/admin');
+const Farmer = require('../models/users');
+const Admin = require('../models/admin');
 
 const sendMail = require('../utils/mailer');
 

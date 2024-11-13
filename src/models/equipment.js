@@ -18,7 +18,10 @@ const equipmentSchema = new mongoose.Schema({
 });
 
 // Indexing for faster queries
-equipmentSchema.index({ price: 1, location: 1 });
+equipmentSchema.index({ name: 1 });
+equipmentSchema.index({ type: 1 });
+equipmentSchema.index({ price: 1 });
+equipmentSchema.index({ location: 1 });
 
 const Equipment = mongoose.model("Equipment", equipmentSchema);
 module.exports = Equipment
