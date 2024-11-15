@@ -1,7 +1,7 @@
 const bcryptjs = require("bcryptjs")
 const jwt = require("jsonwebtoken")
 
-const Equipment = require("../modules/equipment");
+const Equipment = require("../models/equipment");
 
 exports.equipmentFxn = async (req, res) => {
 try {
