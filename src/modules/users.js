@@ -5,7 +5,12 @@ const Schema = mongoose.Schema
 
 // Define the User schema
 const userSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true, trim: true },
+  customer_id: { type: mongoose.Schema.Types.ObjectId, required: true },
+  name: { type: String, required: true },
+  age: { type: Number, required: true },
+  gender: { type: String, required: true },
+  farm_size: { type: Number, required: true },
+  crop_types: ["String"],
   email: { type: String, required: true, unique: true, lowercase: true },
   password: { type: String, required: true },
   contactNumber: { type: String, required: true },
@@ -24,7 +29,11 @@ const userSchema = new mongoose.Schema({
 otp: String,
 otpExpires: Date,
 isVerified: { type: Boolean, default: false },
-createdAt: { type: Date, default: Date.now }
+createdAt: { type: Date, default: Date.now },
+updatedAt: {
+  type: Date,
+  default: Date.now,
+},
 });
 
 userSchema.methods.generateOTP = function() {
@@ -35,7 +44,3 @@ userSchema.methods.generateOTP = function() {
 const Farmer = mongoose.model('Farmer', userSchema);
 
 module.exports =  Farmer;
-// Set up Node.js project with Express and Mongoose.
-// Configure MongoDB (Atlas/local).
-// Implement User Signup API for User and Admin with OTP email verification using Nodemailer.
-// Implement Welcome email on user signup

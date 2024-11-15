@@ -8,14 +8,15 @@ const sendMail = require('../utils/mailer');
 // User Signup Controller
 exports.user_signup = async (req, res) => {
     try {
-        const { username, email, password, contactNumber, role, location } = req.body;
+        
+        const { name, email, password, contactNumber, role, age, gender, farm_size, crop_types,  location } = req.body;
 
         // Check if the user already exists
         let user = await Farmer.findOne({ email });
         if (user) return res.status(400).json({ message: "User already exists" });
 
         // Create new user and hash password
-        user = new Farmer({ username, email, password: await bcryptjs.hash(password, 8), contactNumber, role, location });
+        user = new Farmer({ name, email, password: await bcryptjs.hash(password, 8), contactNumber, role, age, gender, farm_size, crop_types,  location  });
         user.generateOTP();
 
         // Send OTP email
