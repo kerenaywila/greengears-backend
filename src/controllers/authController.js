@@ -270,8 +270,7 @@ exports.activateUser = async (req, res) => {
   }
 };
 
-//DEACTIVATE USER
-
+// DEACTIVATE USER
 exports.deactivateUser = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -284,8 +283,88 @@ exports.deactivateUser = async (req, res) => {
     user.isActive = false;
     await user.save();
 
-    return res.status(200).json({ message: "Successful", user });
+    return res.status(200).json({ message: "User deactivated successfully", user });
   } catch (error) {
     return res.status(500).json({ message: error.message });
+  }
+};
+
+// User Login API
+exports.user_login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Find the user by email
+    let user = await Farmer.findOne({ email });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    // Check if the password is correct
+    const isMatch = await bcryptjs.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1h" });
+
+    res.status(200).json({ message: "Login successful", token });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Forgot Password Request
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await Farmer.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const resetToken = user.generateResetToken();
+    await user.save({ validateBeforeSave: false });
+
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+
+    // Send email with the reset link
+    await sendMail(
+      user.email,
+      "Password Reset Request",
+      `<p>You requested a password reset. Click the link below to reset your password:</p><a href="${resetUrl}">Reset Password</a>`
+    );
+
+    return res.status(200).json({ message: "Password reset link sent to email" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+// Reset Password
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    const user = await Farmer.findOne({ resetToken: token, tokenExpiry: { $gt: Date.now() } });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired reset token" });
+    }
+
+    // Hash new password and save it
+    user.password = await bcryptjs.hash(newPassword, 8);
+    user.resetToken = undefined;
+    user.tokenExpiry = undefined;
+    await user.save();
+
+    res.status(200).json({ message: "Password successfully reset" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
