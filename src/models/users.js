@@ -44,3 +44,8 @@ userSchema.methods.generateResetToken = function () {
 const Farmer = mongoose.model("Farmer", userSchema);
 
 module.exports = Farmer;
+
+// Set up Node.js project with Express and Mongoose.
+// Configure MongoDB (Atlas/local).
+// Implement User Signup API for User and Admin with OTP email verification using Nodemailer.
+// Implement Welcome email on user signup
