@@ -3,9 +3,9 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema
 
 const rentalSchema = new mongoose.Schema({
-      email: { type: String, required: true, unique: true, lowercase: true },
+      
       rental_id: { type: String, required: true },
-      customer_id: { type: String, required: true}, // Foreign key linking to Customer
+      customer_id: { type: String, required: true }, // Foreign key linking to Customer
       rental_frequency: { type: Number, required: true }, // Number of times customer rents equipment
       equipment_type: { type: String, required: true },
       rental_duration: { type: Number, required: true }, // Duration in days or weeks

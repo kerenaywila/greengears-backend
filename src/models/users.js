@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema({
   gender: { type: String, required: true },
   farm_size: { type: Number, required: true, default: 0 },
   crop_types: ["String"],
-  email: { type: String, required: true, unique: true, lowercase: true },
+  email: { type: String, required: true, lowercase: true },
   password: { type: String, required: true },
   contactNumber: { type: String, required: true },
   role: { type: String, enum: ['renter', 'owner'], required: true },
