@@ -25,7 +25,7 @@ exports.verifyToken = async (req, res, next)=>{
         }
     
         req.user = user
-
+        next()
           
         return res.status(200).json({
             message: "Successful",
@@ -35,7 +35,7 @@ exports.verifyToken = async (req, res, next)=>{
         return res.status(500).json({message: error.message});
     }
 
-    next()
+    
   };
 
     // Middleware to check if the user is an Admin

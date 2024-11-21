@@ -1,10 +1,11 @@
 const Farmers = require("../models/users");
 const { check, validationResult } = require("express-validator");
-const jwt = require("jsonwebtoken");
 
-// Validate Registrstion
+// Validate Registration
 const validateRegistration = [
-  check("username").notEmpty().withMessage("Name is required"),
+  check("name")
+    .notEmpty()
+    .withMessage("Name is required"),
 
   check("email")
     .isEmail()
@@ -14,7 +15,16 @@ const validateRegistration = [
 
   check("password")
     .isLength({ min: 8 })
-    .withMessage("Minimum of 8 characters required for password")
+    .withMessage("Password must be at least 8 characters long")
+    .custom((password) => {
+      const validatePassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+      if (!validatePassword.test(password)) {
+        throw new Error(
+          "Password must include at least one uppercase letter, one lowercase letter, one number, and one special character"
+        );
+      }
+      return true; // Valid password
+    })
     .notEmpty()
     .withMessage("Password is required"),
 
@@ -29,11 +39,36 @@ const validateRegistration = [
   },
 ];
 
+
+
 function validEmail(email) {
   const re =
     /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
   return re.test(String(email).toLowerCase());
 }
+
+const validateBooking = [
+  check("rental_id").isInt().withMessage("Rental ID must be a valid integer"),
+  // check("customer_id").isInt().withMessage("Customer ID must be a valid integer"),
+  check("rental_date").isISO8601().withMessage("Rental date must be a valid date"),
+  check("return_date").isISO8601().withMessage("Return date must be a valid date"),
+  check("rental_duration")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("Rental duration must be a positive integer"),
+  check("rental_cost")
+    .optional()
+    .isDecimal()
+    .withMessage("Rental cost must be a valid number"),
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+  },
+];
+
 
 //VALIDATE FORGOT PASSWORD
 const validateForgotPassword = async (req, res, next) => {
@@ -55,4 +90,6 @@ const validateForgotPassword = async (req, res, next) => {
   next();
 };
 
-module.exports = { validateRegistration, validateForgotPassword};
+
+
+module.exports = { validateRegistration, validateBooking, validateForgotPassword};
