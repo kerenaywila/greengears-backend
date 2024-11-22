@@ -1,5 +1,4 @@
 const bcryptjs = require("bcryptjs")
-const jwt = require("jsonwebtoken")
 const Equipment = require("../models/equipment");
 const upload = require("../utils/multerConfig");
 const fs = require("fs");
