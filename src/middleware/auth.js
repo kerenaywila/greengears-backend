@@ -48,7 +48,6 @@ function validEmail(email) {
 }
 
 const validateBooking = [
-  check("rental_id").isInt().withMessage("Rental ID must be a valid integer"),
   check("customer_id").notEmpty().withMessage("Customer ID is required"),
   check("rental_date").isISO8601().withMessage("Rental date must be a valid date"),
   check("return_date").isISO8601().withMessage("Return date must be a valid date"),
