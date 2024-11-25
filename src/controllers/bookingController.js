@@ -1,54 +1,91 @@
 const bcryptjs = require("bcryptjs")
 const Booking = require("../models/booking");
-const Farmer = require("../models/users");
+const mongoose = require("mongoose");
+
 
 // Create Booking
 exports.createBooking = async (req, res) => {
   try {
     const {
       customer_id,
-      rental_id,
-      rental_frequency,
+      // rental_frequency,
       equipment_type,
       rental_duration,
       rental_cost,
-      customer_rating,
+      // customer_rating,
       rental_date,
       return_date,
       status,
     } = req.body;
 
   
+        // Validate rental_date and return_date
+        const now = new Date();
+        const rentalDate = new Date(rental_date);
+        const returnDate = new Date(return_date);
+    
+        if (rentalDate <= now) {
+          return res.status(400).json({
+            success: false,
+            message: "Your selected booking start date has passed. Please select a valid start date.",
+          });
+        }
+    
+        if (returnDate <= rentalDate) {
+          return res.status(400).json({
+            success: false,
+            message: "The return date must be after the rental start date.",
+          });
+        }
 
-    // Check for overlapping bookings (specific to rental_id)
-    const conflictingBooking = await Booking.findOne({
-      rental_id,
-      $or: [
-        { rental_date: { $lte: return_date, $gte: rental_date } },
-        { return_date: { $gte: rental_date, $lte: return_date } },
-      ],
-    });
+     // Generate unique Rental ID for Tracking
+    const generateRentalID = async (existingIDs) => {
+      const letters = "abcdefghijklmnopqrstuvwxyz";
+      const numbers = "0123456789";
+    
+      let newID;
+      do {
+          const randomLetters = Array.from({ length: 3 }, () =>
+              letters.charAt(Math.floor(Math.random() * letters.length))
+          ).join("");
+    
+          const randomNumbers = Array.from({ length: 3 }, () =>
+              numbers.charAt(Math.floor(Math.random() * numbers.length))
+          ).join("");
+    
+          newID = `Rent${randomNumbers}${randomLetters}`;
+      } while (existingIDs.includes(newID)); // Ensure unique ID
+    
+      return newID;
+    };
+    
 
-    if (conflictingBooking) {
-      return res.status(400).json({
-        message: "The equipment is already booked for the selected dates.",
-      });
-    }
+    // Generate unique customer ID
+    const existingIDs = await Booking.distinct("rental_id");
+    const rental_id = await generateRentalID(existingIDs);
+   // Example usage
+   (async () => {
+     const existingIDs = ["Rent123abc", "Rent456def"]; // Replace with a DB query
+     console.log(await generateRentalID(existingIDs));
+   })();
+   
 
+      
     // Create the booking
     const booking = await Booking.create({
       
       rental_id,
-      customer_id, // Use the ID of the found user
-      rental_frequency,
+      customer_id, // Custmer ID generated during sign up
+      // rental_frequency,
       equipment_type,
       rental_duration,
       rental_cost,
-      customer_rating,
+      // customer_rating,
       rental_date,
       return_date,
       status,
     });
+
 
     // Respond with success
     return res.status(201).json({
@@ -68,8 +105,8 @@ exports.createBooking = async (req, res) => {
 // Approve Booking
 exports.approveBooking = async (req, res) => {
   try {
-    const { id } = req.params;
-    const booking = await Booking.findByIdAndUpdate(id, { status: "approved" }, { new: true });
+    const { rental_id } = req.params;
+    const booking = await Booking.findByIdAndUpdate(rental_id, { status: "approved" }, { new: true });
     if (!booking) return res.status(404).json({ message: "Booking not found" });
     res.json({ message: "Booking approved", booking });
   } catch (error) {
@@ -78,13 +115,107 @@ exports.approveBooking = async (req, res) => {
 };
 
 // Cancel Booking
+
+const BOOKING_STATUS = {
+  CANCELED: "canceled",
+  CONFIRMED: "confirmed",
+  PENDING: "pending",
+};
+
+
 exports.cancelBooking = async (req, res) => {
   try {
-    const { id } = req.params;
-    const booking = await Booking.findByIdAndUpdate(id, { status: "canceled" }, { new: true });
-    if (!booking) return res.status(404).json({ message: "Booking not found" });
-    res.json({ message: "Booking canceled", booking });
+    const { rental_id } = req.body;
+
+    // Validate rental_id
+    if (!rental_id) {
+      return res.status(400).json({ success: false, message: "Invalid booking ID" });
+    }
+
+    // Find the booking
+    const booking = await Booking.findOne({ rental_id });
+    // console.log(rental_id);
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: "Booking not found" });
+    }
+
+    // Check if the booking is eligible for cancellation
+    const now = new Date();
+    if (new Date(booking.startDate) < now) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot cancel past bookings",
+      });
+    }
+
+    // Check if the booking is already canceled
+    if (booking.status === BOOKING_STATUS.CANCELED) {
+      return res.status(400).json({
+        success: false,
+        message: "Booking is already canceled",
+      });
+    }
+
+    // Update the booking status
+    booking.status = BOOKING_STATUS.CANCELED;
+    await booking.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Booking canceled successfully",
+      data: booking,
+    });
   } catch (error) {
-    res.status(500).json({ message: "Error canceling booking", error });
+    console.error("Error canceling booking:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while canceling the booking",
+      error: error.message,
+    });
   }
 };
+
+
+exports.deleteCanceledBooking = async (req, res) => {
+  try {
+    const { rental_id } = req.body;
+
+    // Validate rental_id
+    if (!rental_id) {
+      return res.status(400).json({ success: false, message: "Invalid booking ID" });
+    }
+
+    // Find the booking
+    const booking = await Booking.findOne({ rental_id });
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: "Booking not found" });
+    }
+
+    // Check if the booking is already canceled
+    if (booking.status !== BOOKING_STATUS.CANCELED) {
+      return res.status(400).json({
+        success: false,
+        message: "Only canceled bookings can be deleted",
+      });
+    }
+
+    // Delete the booking (hard delete)
+    await booking.deleteOne();
+
+    res.status(200).json({
+      success: true,
+      message: "Canceled booking successfully deleted",
+    });
+  } catch (error) {
+    console.error("Error deleting canceled booking:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while deleting the booking",
+      error: error.message,
+    });
+  }
+};
+
+

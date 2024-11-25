@@ -48,8 +48,7 @@ function validEmail(email) {
 }
 
 const validateBooking = [
-  check("rental_id").isInt().withMessage("Rental ID must be a valid integer"),
-  // check("customer_id").isInt().withMessage("Customer ID must be a valid integer"),
+  check("customer_id").notEmpty().withMessage("Customer ID is required"),
   check("rental_date").isISO8601().withMessage("Rental date must be a valid date"),
   check("return_date").isISO8601().withMessage("Return date must be a valid date"),
   check("rental_duration")
@@ -91,5 +90,36 @@ const validateForgotPassword = async (req, res, next) => {
 };
 
 
+const validatePasswordRest = [
+  // Password must not be empty
+  check("newPassword")
+      .notEmpty()
+      .withMessage("Password is required")
 
-module.exports = { validateRegistration, validateBooking, validateForgotPassword};
+      // Password length validation
+      .isLength({ min: 8 })
+      .withMessage("Password must be at least 8 characters long")
+
+      // Password complexity validation
+      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
+      .withMessage("Password must include at least one uppercase letter, one lowercase letter, one number, and one special character"),
+
+  // Error handling middleware
+  (req, res, next) => {
+      const errors = validationResult(req);
+
+      if (!errors.isEmpty()) {
+          return res.status(400).json({
+              success: false,
+              errors: errors.array().map(error => ({
+                  field: error.param,
+                  message: error.msg,
+              })),
+          });
+      }
+
+      next();
+  },
+];
+
+module.exports = { validateRegistration, validateBooking, validateForgotPassword, validatePasswordRest};

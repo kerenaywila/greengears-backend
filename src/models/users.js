@@ -36,11 +36,28 @@ updatedAt: {
   type: Date,
   default: Date.now,
 },
+  resetPasswordToken: { type: String },
+  resetPasswordExpires: { type: Date },
 });
 
 userSchema.methods.generateOTP = function() {
   this.otp = crypto.randomInt(100000, 999999).toString();
   this.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
+};
+
+userSchema.methods.generateResetToken = function () {
+  const resetToken = crypto.randomBytes(32).toString("hex");
+
+  // Hash and set the reset token
+  this.resetPasswordToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+
+  // Set token expiration time (e.g., 1 hour)
+  this.resetPasswordExpires = Date.now() + 60 * 60 * 1000;
+  
+  return resetToken;
 };
 
 const Farmer = mongoose.model('Farmer', userSchema);

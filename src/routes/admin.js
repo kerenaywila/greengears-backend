@@ -1,7 +1,7 @@
 const express = require("express");
 
 const {validateRegistration,} = require("../middleware/auth");
-const { isAdmin, verifyToken } = require("../middleware/adminMiddleware");
+// const { isAdmin, verifyToken } = require("../middleware/adminMiddleware");
 
 const { admin_singup, verifyOTP_admin, resendOtp_admin } = require('../controllers/authController');
 
