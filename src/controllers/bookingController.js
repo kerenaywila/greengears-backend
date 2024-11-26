@@ -63,11 +63,7 @@ exports.createBooking = async (req, res) => {
     // Generate unique customer ID
     const existingIDs = await Booking.distinct("rental_id");
     const rental_id = await generateRentalID(existingIDs);
-   // Example usage
-   (async () => {
-     const existingIDs = ["Rent123abc", "Rent456def"]; // Replace with a DB query
-     console.log(await generateRentalID(existingIDs));
-   })();
+
    
 
       
@@ -106,7 +102,12 @@ exports.createBooking = async (req, res) => {
 exports.approveBooking = async (req, res) => {
   try {
     const { rental_id } = req.params;
-    const booking = await Booking.findByIdAndUpdate(rental_id, { status: "approved" }, { new: true });
+    const booking = await Booking.findOneAndUpdate(
+      { rental_id },
+      { status: "approved" },
+      { new: true }
+    );
+    
     if (!booking) return res.status(404).json({ message: "Booking not found" });
     res.json({ message: "Booking approved", booking });
   } catch (error) {
@@ -142,7 +143,7 @@ exports.cancelBooking = async (req, res) => {
 
     // Check if the booking is eligible for cancellation
     const now = new Date();
-    if (new Date(booking.startDate) < now) {
+    if (new Date(booking.rental_date) < now) {
       return res.status(400).json({
         success: false,
         message: "Cannot cancel past bookings",
@@ -219,3 +220,133 @@ exports.deleteCanceledBooking = async (req, res) => {
 };
 
 
+// Environment variables
+const PAYMENT_GATEWAY_REFUND_URL = process.env.PAYMENT_GATEWAY_REFUND_URL; // e.g., https://api.paymentgateway.com/verify
+const PAYMENT_GATEWAY_SECRET_KEY = process.env.PAYMENT_GATEWAY_SECRET_KEY; // Secret key for gateway authentication
+
+
+
+
+// Refund endpoint
+exports.refundCancelBooking = async (req, res) => {
+
+    const { rental_id, transactionId, rental_cost, reason } = req.body;
+
+    try {
+        // Validate environment variables
+        if (!PAYMENT_GATEWAY_REFUND_URL || !PAYMENT_GATEWAY_SECRET_KEY) {
+            console.error('Payment gateway configuration missing.');
+            return res.status(500).json({
+                status: 'error',
+                message: 'Server configuration error. Please try again later.',
+            });
+        }
+
+        // Check if the booking exists
+        const booking = await Booking.findOne({ rental_id });
+        if (!booking) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'Booking not found.',
+            });
+        }
+
+        // Check if the booking is eligible for a refund
+        if (booking.status !== BOOKING_STATUS.CANCELED) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Booking is not eligible for a refund.',
+            });
+        }
+
+        // Check if the booking has already been refunded
+        if (booking.refundedAmount) {
+            return res.status(409).json({
+                status: 'error',
+                message: 'Refund has already been processed for this booking.',
+            });
+        }
+
+        // Call the payment gateway's refund API with retries
+        const MAX_RETRIES = 3;
+        let refundResponse;
+        for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+            try {
+                const response = await axios.post(
+                    PAYMENT_GATEWAY_REFUND_URL,
+                    {
+                        transaction_id: transactionId,
+                        rental_cost,
+                        reason: reason || 'Booking canceled',
+                    },
+                    {
+                        headers: {
+                            Authorization: `Bearer ${PAYMENT_GATEWAY_SECRET_KEY}`,
+                        },
+                    }
+                );
+                refundResponse = response.data;
+                if (refundResponse.status === 'success') break;
+            } catch (err) {
+                if (attempt === MAX_RETRIES - 1) throw err;
+            }
+        }
+
+        // Handle successful refund
+        if (refundResponse.status === 'success') {
+            await updateBookingRefundStatus(rental_id, refundResponse.refund_id, rental_cost);
+            return res.status(200).json({
+                status: 'success',
+                message: 'Refund processed successfully.',
+                data: {
+                    rental_id,
+                    refundId: refundResponse.refund_id,
+                    rental_cost,
+                },
+            });
+        } else {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Refund failed.',
+                data: refundResponse,
+            });
+        }
+    } catch (error) {
+        console.error('Error processing refund:', error.message);
+        if (error.response) {
+            return res.status(error.response.status).json({
+                status: 'error',
+                message: 'Failed to process refund via payment gateway.',
+                details: error.response.data,
+            });
+        } else if (error.request) {
+            return res.status(503).json({
+                status: 'error',
+                message: 'Unable to reach payment gateway. Please try again later.',
+            });
+        } else {
+            return res.status(500).json({
+                status: 'error',
+                message: 'Internal server error. Please try again later.',
+            });
+        }
+    }
+};
+
+// Helper function to update booking refund status
+async function updateBookingRefundStatus(rental_id, refundId, rental_cost) {
+    try {
+        await Booking.findOneAndUpdate(
+            { rental_id },
+            {
+                refundId,
+                refundedAmount: rental_cost,
+                refundDate: new Date(),
+            },
+            { new: true }
+        );
+    } catch (error) {
+        console.error('Failed to update booking refund status:', error.message);
+        throw new Error('Database update failed.');
+    }
+}
