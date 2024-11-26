@@ -9,13 +9,29 @@ const rentalSchema = new mongoose.Schema({
       // rental_frequency: { type: Number, required: true }, // Number of times customer rents equipment
       equipment_type: { type: String, required: true },
       rental_duration: { type: Number, required: true }, // Duration in days or weeks
-      rental_cost: { type: Number, required: true }, // Total cost of the rental
+      rental_cost: { type: Number, required: true , min: 0}, // Total cost of the rental
       // customer_rating: { type: Number, required: true }, // Rating given by customer, e.g., out of 5
       rental_date: { type: Date, required: true },
-      return_date: { type: Date, required: true },
-      status: { type: String, enum: ["pending", "approved", "canceled"], default: "pending" },
-      createdAt: { type: Date, default: Date.now },
-});
+      return_date: {
+            type: Date,
+            required: true,
+            validate: {
+                validator: function (value) {
+                    return value > this.rental_date;
+                },
+                message: "Return date must be after rental date.",
+            },
+        },
+        transactionId: { type: String, required: true },
+        reason: { type: String }, // Optional field
+        status: { 
+            type: String, 
+            enum: ["pending", "approved", "canceled", "returned", "overdue", "in-progress"], 
+            default: "pending" 
+        },
+    },
+    { timestamps: true } // Automatically adds createdAt and updatedAt
+);
 
 const RentalHistory = mongoose.model("RentalHistory", rentalSchema);
-module.exports =  RentalHistory;
+module.exports = RentalHistory;
