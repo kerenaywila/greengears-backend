@@ -310,7 +310,7 @@ exports.resendOtp_admin = async (req, res) => {
 };
 
 // DEACTIVATE USER
-exports.deactivateUser = async (req, res) => {
+exports.deactivateUser_admin = async (req, res) => {
     try {
       const { userId } = req.params;
   

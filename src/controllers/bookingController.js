@@ -2,6 +2,7 @@ const bcryptjs = require("bcryptjs")
 const Booking = require("../models/booking");
 const mongoose = require("mongoose");
 const sendMail = require('../utils/mailer');
+const Farmer = require('../models/users');
 
 
 // Create Booking
@@ -83,8 +84,8 @@ exports.createBooking = async (req, res) => {
       status,
     });
 
-    // Fetch customer email (Assuming `User` is a model representing customers)
-    const customer = await User.findById(customer_id);
+    // Fetch customer email 
+    const customer = await Farmer.findById(customer_id);
     if (!customer) {
       return res.status(404).json({ success: false, message: "Customer not found" });
     }
@@ -103,7 +104,7 @@ exports.createBooking = async (req, res) => {
     `;
 
     // Send confirmation email
-    await sendEmailNotification(customer.email, "Booking Confirmation", emailBody);
+    await sendMail(customer.email, "Booking Confirmation", emailBody);
 
     // Respond with success
     return res.status(201).json({
@@ -183,8 +184,8 @@ exports.cancelBooking = async (req, res) => {
     booking.status = BOOKING_STATUS.CANCELED;
     await booking.save();
 
-    // Fetch customer email (Assuming `User` is a model representing customers)
-    const customer = await User.findById(booking.customer_id);
+    /* Fetch customer email (Assuming `User` is a model representing customers)
+    const customer = await Farmer.findById(booking.customer_id);
     if (!customer) {
       return res.status(404).json({ success: false, message: "Customer not found" });
     }
@@ -202,7 +203,7 @@ exports.cancelBooking = async (req, res) => {
     `;
 
     // Send cancellation email
-    await sendEmailNotification(customer.email, "Booking Cancellation Confirmation", emailBody);
+    await sendEmailNotification(customer.email, "Booking Cancellation Confirmation", emailBody);*/
 
     res.status(200).json({
       success: true,

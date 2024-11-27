@@ -13,6 +13,9 @@ router.post('/login/user', Admin_login);
 router.post('/signup/admin', validateAdmin_Reg, admin_singup);
 router.post('/verify-otp/admin', verifyOTP_admin);
 router.post('/resend-otp/admin', resendOtp_admin);
+router.post('/activate-user/admin', activateUser_admin);
+router.post('/deactivate-user/admin', deactivateUser_admin);
+
 
 
 module.exports = router;
