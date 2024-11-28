@@ -1,11 +1,11 @@
 const express = require("express");
-const { equipmentFxn, getSingleEquipment, createEquipment, updateEquipment, deleteEquipment } = require("../controllers/equipmentController");
+const { equi_Search_Filter_Fxn, getSingleEquipment, createEquipment, updateEquipment, deleteEquipment } = require("../controllers/equipmentController");
 const upload = require("../utils/multerConfig"); // Image upload middleware
 
 const router = express.Router();
 
 // GET /api/equipment?page=1&limit=10&type=example&minPrice=100&maxPrice=500&location=NewYork
-router.get("/equipment", equipmentFxn);
+router.get("/equipment", equi_Search_Filter_Fxn);
 
 // GET /api/single/equipment/:id
 router.get("/single/equipment/:id", getSingleEquipment);

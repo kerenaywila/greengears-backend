@@ -3,7 +3,7 @@ const Equipment = require("../models/equipment");
 const upload = require("../utils/multerConfig");
 const fs = require("fs");
 
-exports.equipmentFxn = async (req, res) => {
+exports.equi_Search_Filter_Fxn = async (req, res) => {
 try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -72,33 +72,72 @@ exports.getSingleEquipment = async (req, res) => {
 // Create new equipment listing (with images, pricing, availability)
 exports.createEquipment = async (req, res) => {
   try {
-    const { name, type, brand, serialNumber, purchaseDate, price, description, location, available } = req.body;
-    const images = req.files ? req.files.map(file => file.path) : [];
-
-    const newEquipment = new Equipment({
-      name,
+    const {
       type,
       brand,
-      serialNumber,
-      purchaseDate,
+      model,
       price,
-      available,
+      purchase_date,
       description,
-      location,
+      current_condition,
+      available,
+    } = req.body;
+
+    // Validate required fields
+    if (!type || !brand || !model || !price || !purchase_date || !current_condition) {
+      return res.status(400).json({ message: "All required fields must be provided." });
+    }
+
+    // Handle uploaded images (if any)
+    const images = req.files ? req.files.map((file) => file.path) : [];
+
+    // Function to generate unique equipment ID
+    const generateEquipmentID = async (existingIDs) => {
+      const numbers = "0123456789";
+      let newID;
+
+      do {
+        const randomNumbers = Array.from({ length: 5 }, () =>
+          numbers.charAt(Math.floor(Math.random() * numbers.length))
+        ).join("");
+        newID = `SN${randomNumbers}`;
+      } while (existingIDs.includes(newID)); // Ensure uniqueness
+
+      return newID;
+    };
+
+    // Fetch existing IDs to avoid duplicates
+    const existingIDs = await Equipment.distinct("equipment_id");
+    const equipment_id = await generateEquipmentID(existingIDs);
+
+    // Create new equipment document
+    const newEquipment = new Equipment({
+      equipment_id,
+      type,
+      brand,
+      model,
+      price: parseFloat(price), // Ensure price is stored as a number
+      purchase_date: new Date(purchase_date), // Ensure correct date format
+      description,
+      current_condition,
+      available: available === "true" || available === true, // Normalize boolean value
       images,
     });
 
+    // Save to the database
     await newEquipment.save();
+
+    // Return success response
     res.status(201).json({
       message: "Equipment created successfully",
       data: newEquipment,
     });
   } catch (error) {
-    res.status(500).json({ message: "Error creating equipment", error });
+    // Return error response
+    res.status(500).json({ message: "Error creating equipment", error: error.message });
   }
 };
 
-// Update existing equipment (with images, pricing, availability)
 exports.updateEquipment = async (req, res) => {
   try {
     const equipmentId = req.params.id;
@@ -131,13 +170,12 @@ exports.updateEquipment = async (req, res) => {
     res.status(500).json({ message: "Error updating equipment", error });
   }
 };
-
 // Delete existing equipment
 exports.deleteEquipment = async (req, res) => {
   try {
-    const equipmentId = req.params.id;
+    const equipment_id = req.params.id;
 
-    const equipment = await Equipment.findById(equipmentId);
+    const equipment = await Equipment.findById(equipment_id);
 
     if (!equipment) {
       return res.status(404).json({ message: "Equipment not found" });
@@ -152,7 +190,7 @@ exports.deleteEquipment = async (req, res) => {
       });
     }
 
-    await equipment.remove();
+    await equipment.deleteOne();
     res.status(200).json({
       message: "Equipment deleted successfully",
     });
