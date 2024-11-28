@@ -4,20 +4,15 @@ const mongoose = require("mongoose")
 const Schema = mongoose.Schema
 
 const equipmentSchema = new mongoose.Schema({
-  equipment_id: { type: mongoose.Schema.Types.ObjectId, required: true },
+  equipment_id: { type: String, required: true },
   type: { type: String, required: true },         // Type of equipment, e.g., tractor, plow
   brand: { type: String, required: true },        // Brand of the equipment
-  model: { type: String, required: true },        // Model name or number
+  model: { type: String, required: true },  
+  price:  { type: Number, required: true },   // Model name or number
   purchase_date: { type: Date, required: true },
-  maintenance_history: [
-    {
-      maintenance_id: { type: mongoose.Schema.Types.ObjectId, required: true },
-      date: { type: Date, required: true },
-      details: { type: String, required: true },  // Description of maintenance performed
-      cost: { type: Number, required: true }      // Cost of maintenance for this entry
-    }
-  ],
+  description: { type: String, required: true },
   current_condition: { type: String, enum: ['good', 'needs repair', 'excellent'], required: true }, // e.g., 'good', 'needs repair', 'excellent'
+  available: { type: Boolean, required: true, default: true},
   createdAt: {
     type: Date,
     default: Date.now,
