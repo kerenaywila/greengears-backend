@@ -291,7 +291,7 @@ exports.resendOtp_admin = async (req, res) => {
     }
 
     // Generate new OTP and update expiration
-    // Generate new OTP and update expiration
+  
     user.generateOTP();
     user.otpExpires = new Date(Date.now() + 5 * 60 * 1000); // Extend expiration time
     await user.save();
@@ -350,12 +350,78 @@ exports.user_login = async (req, res) => {
     // Generate JWT token
     const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
+
+    const currentDate = new Date().toLocaleString();
+
+// Send the login notification email
+await sendMail(
+  user.email,
+  "Green Gear Web Portal Login Confirmation",
+  `
+    <p>Hi ${user.name || "Renter"},</p>
+    <h3>Green Gear Admin Web Portal Login Confirmation</h3>
+    <p>
+      Please be informed that your web portal account was accessed on ${currentDate}.
+      If you did not log on to your account at the time detailed above,
+      please call our contact centre on: 094613333.
+    </p>
+  `
+);
     res.status(200).json({ message: "Login successful", token });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
+exports.Admin_login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
+
+    // Find Admin by email
+    const user = await Admin.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    // Compare passwords
+    const passwordMatch = await bcryptjs.compare(password, user.password);
+    if (!passwordMatch) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || "1h" }
+    );
+// Get current date and time
+const currentDate = new Date().toLocaleString();
+
+// Send the login notification email
+await sendMail(
+  user.email,
+  "Green Gear Admin Web Portal Login Confirmation",
+  `
+    <p>Hi ${user.username || "Admin"},</p>
+    <h3>Green Gear Admin Web Portal Login Confirmation</h3>
+    <p>
+      Please be informed that your web portal account was accessed on ${currentDate}.
+      If you did not log on to your account at the time detailed above,
+      please call our contact centre on: 094613333.
+    </p>
+  `
+);
+    res.status(200).json({ message: "Login successful", token });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 // Forgot Password Request
 exports.forgotPassword = async (req, res) => {
   try {

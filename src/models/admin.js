@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 
 const adminSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true, trim: true },
@@ -17,6 +18,11 @@ const adminSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
+
+adminSchema.methods.generateOTP = function() {
+  this.otp = crypto.randomInt(100000, 999999).toString();
+  this.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
+};
 
 const Admin = mongoose.model('Admin', adminSchema);
 
