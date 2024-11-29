@@ -1,8 +1,8 @@
 const bcryptjs = require("bcryptjs")
 const Booking = require("../models/booking");
 const mongoose = require("mongoose");
-const sendMail = require('../utils/mailer');
 const Farmer = require('../models/users');
+const sendMail = require('../utils/mailer');
 
 
 // Create Booking
@@ -20,58 +20,58 @@ exports.createBooking = async (req, res) => {
       status,
     } = req.body;
 
-    // Validate rental_date and return_date
-    const now = new Date();
-    const rentalDate = new Date(rental_date);
-    const returnDate = new Date(return_date);
+  
+        // Validate rental_date and return_date
+        const now = new Date();
+        const rentalDate = new Date(rental_date);
+        const returnDate = new Date(return_date);
+    
+        if (rentalDate <= now) {
+          return res.status(400).json({
+            success: false,
+            message: "Your selected booking start date has passed. Please select a valid start date.",
+          });
+        }
+    
+        if (returnDate <= rentalDate) {
+          return res.status(400).json({
+            success: false,
+            message: "The return date must be after the rental start date.",
+          });
+        }
 
-    if (rentalDate <= now) {
-      return res.status(400).json({
-        success: false,
-        message: "Your selected booking start date has passed. Please select a valid start date.",
-      });
-    }
-
-    if (returnDate <= rentalDate) {
-      return res.status(400).json({
-        success: false,
-        message: "The return date must be after the rental start date.",
-      });
-    }
-
-    // Generate unique Rental ID for Tracking
+     // Generate unique Rental ID for Tracking
     const generateRentalID = async (existingIDs) => {
       const letters = "abcdefghijklmnopqrstuvwxyz";
       const numbers = "0123456789";
-
+    
       let newID;
       do {
-        const randomLetters = Array.from({ length: 3 }, () =>
-          letters.charAt(Math.floor(Math.random() * letters.length))
-        ).join("");
-
-        const randomNumbers = Array.from({ length: 3 }, () =>
-          numbers.charAt(Math.floor(Math.random() * numbers.length))
-        ).join("");
-
-        newID = `Rent${randomNumbers}${randomLetters}`;
+          const randomLetters = Array.from({ length: 3 }, () =>
+              letters.charAt(Math.floor(Math.random() * letters.length))
+          ).join("");
+    
+          const randomNumbers = Array.from({ length: 3 }, () =>
+              numbers.charAt(Math.floor(Math.random() * numbers.length))
+          ).join("");
+    
+          newID = `Rent${randomNumbers}${randomLetters}`;
       } while (existingIDs.includes(newID)); // Ensure unique ID
-
+    
       return newID;
     };
+    
 
     // Generate unique customer ID
     const existingIDs = await Booking.distinct("rental_id");
     const rental_id = await generateRentalID(existingIDs);
 
-    // Example usage
-    (async () => {
-      const existingIDs = ["Rent123abc", "Rent456def"]; // Replace with a DB query
-      console.log(await generateRentalID(existingIDs));
-    })();
+   
 
+      
     // Create the booking
     const booking = await Booking.create({
+      
       rental_id,
       customer_id, // Custmer ID generated during sign up
       // rental_frequency,
@@ -84,27 +84,6 @@ exports.createBooking = async (req, res) => {
       status,
     });
 
-    // Fetch customer email 
-    const customer = await Farmer.findById(customer_id);
-    if (!customer) {
-      return res.status(404).json({ success: false, message: "Customer not found" });
-    }
-
-    // Compose email content
-    const emailBody = `
-      Dear ${customer.name},
-
-      Your booking for ${equipment_type} from ${rental_date} to ${return_date} has been confirmed.
-      Rental ID: ${rental_id}
-
-      Thank you for using our service!
-
-      Best regards,
-      Your Booking Team
-    `;
-
-    // Send confirmation email
-    await sendMail(customer.email, "Booking Confirmation", emailBody);
 
     // Respond with success
     return res.status(201).json({
@@ -131,7 +110,27 @@ exports.approveBooking = async (req, res) => {
       { new: true }
     );
     
+    const booking = await Booking.findOneAndUpdate(
+      { rental_id },
+      { status: "approved" },
+      { new: true }
+    );
+    
     if (!booking) return res.status(404).json({ message: "Booking not found" });
+
+    // Send email to the customer notifying about the approval
+    const user = await Farmer.findOne({ customer_id: booking.customer_id });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const subject = "Your Booking Has Been Approved";
+    const html = `<p>Dear Customer,</p>
+                  <p>Your booking with rental ID <strong>${rental_id}</strong> has been approved. Please contact support if you have any questions.</p>
+                  <p>Thank you for using our service!</p>`;
+
+    await sendMail(user.email, subject, html);
+
     res.json({ message: "Booking approved", booking });
   } catch (error) {
     res.status(500).json({ message: "Error approving booking", error });
@@ -158,6 +157,7 @@ exports.cancelBooking = async (req, res) => {
 
     // Find the booking
     const booking = await Booking.findOne({ rental_id });
+    // console.log(rental_id);
 
     if (!booking) {
       return res.status(404).json({ success: false, message: "Booking not found" });
@@ -165,6 +165,7 @@ exports.cancelBooking = async (req, res) => {
 
     // Check if the booking is eligible for cancellation
     const now = new Date();
+    if (new Date(booking.rental_date) < now) {
     if (new Date(booking.rental_date) < now) {
       return res.status(400).json({
         success: false,
@@ -184,26 +185,18 @@ exports.cancelBooking = async (req, res) => {
     booking.status = BOOKING_STATUS.CANCELED;
     await booking.save();
 
-    /* Fetch customer email (Assuming `User` is a model representing customers)
-    const customer = await Farmer.findById(booking.customer_id);
-    if (!customer) {
-      return res.status(404).json({ success: false, message: "Customer not found" });
+    // Send email to the customer notifying about the cancellation
+    const user = await Farmer.findOne({ customer_id: booking.customer_id });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // Compose email content
-    const emailBody = `
-      Dear ${customer.name},
+    const subject = "Your Booking Has Been Cancelled";
+    const html = `<p>Dear Customer,</p>
+                  <p>Your booking with rental ID <strong>${rental_id}</strong> has been cancelled. Please contact support if you have any questions.</p>
+                  <p>Thank you for using our service!</p>`;
 
-      Your booking with Rental ID: ${rental_id} for ${booking.equipment_type} has been canceled successfully.
-
-      If this cancellation was not intended or you need further assistance, please contact us.
-
-      Best regards,
-      Your Booking Team
-    `;
-
-    // Send cancellation email
-    await sendEmailNotification(customer.email, "Booking Cancellation Confirmation", emailBody);*/
+    await sendMail(user.email, subject, html);
 
     res.status(200).json({
       success: true,

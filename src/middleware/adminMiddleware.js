@@ -1,4 +1,7 @@
 // Middleware to verify JWT token
+const jwt = require('jsonwebtoken');
+const Farmer = require('../models/users');
+
 exports.verifyToken = async (req, res, next)=>{
     try {
            
@@ -12,20 +15,23 @@ exports.verifyToken = async (req, res, next)=>{
     
         const token = tkk[1]
     
-        const decoded = jwt.verify(token, process.env.ACCESS_TOKEN)
+        const decoded = jwt.verify(token, process.env.JWT_SECRET)
+
+        console.log(decoded)
 
         if(!decoded){
             return res.status(401).json({message: "Invalid Login details"})
         }
 
-        const user = await User.findOne({email: decoded.user.email})
+        const user = await Farmer.findOne({_id: decoded.userId})
 
         if(!user){
             return res.status(404).json({message: "User account not found!"})
         }
     
         req.user = user
-        next()
+
+        next();
           
         return res.status(200).json({
             message: "Successful",
@@ -34,9 +40,8 @@ exports.verifyToken = async (req, res, next)=>{
     } catch (error) {
         return res.status(500).json({message: error.message});
     }
-
     
-  };
+};
 
     // Middleware to check if the user is an Admin
 exports.isAdmin = (req, res, next) => {
