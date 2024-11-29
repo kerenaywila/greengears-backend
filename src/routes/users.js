@@ -11,6 +11,7 @@ router.post('/verify-otp/user', verifyOTP_user);
 router.post('/resend-otp/user', resendOtp_user);
 router.post("/forgot-password", validateForgotPassword, forgotPassword);
 router.post("/reset-password", validatePasswordRest, resetPassword);
+
 // Login Route
 router.post('/login/user', user_login);
 
