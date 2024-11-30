@@ -169,4 +169,15 @@ const validatePasswordRest = [
   },
 ];
 
-module.exports = { validateRegistration, validateAdmin_Reg,validateBooking, validateForgotPassword, validatePasswordRest};
+const validateEquipmentUpdate = [
+  check("equipment_id").notEmpty().withMessage("equipment ID is required"),
+    (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+  },
+];
+
+module.exports = { validateRegistration, validateAdmin_Reg,validateBooking, validateForgotPassword, validatePasswordRest, validateEquipmentUpdate};

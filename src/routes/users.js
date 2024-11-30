@@ -13,7 +13,7 @@ router.post("/forgot-password", validateForgotPassword, forgotPassword);
 router.post("/reset-password", validatePasswordRest, resetPassword);
 
 // Login Route
-router.post('/login/user', user_login);
+router.post('/login/user',  user_login);
 
 // Protected Routes with Role-Based Access Control (RBAC)
 router.get('/admin/dashboard', verifyToken, checkRole(['admin']), (req, res) => {

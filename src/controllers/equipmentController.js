@@ -3,72 +3,6 @@ const Equipment = require("../models/equipment");
 const upload = require("../utils/multerConfig");
 const fs = require("fs");
 
-exports.equi_Search_Filter_Fxn = async (req, res) => {
-try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-
-    // Search and filter conditions
-    const { type, minPrice, maxPrice, location } = req.query;
-    const filters = {};
-
-    // Filter by type
-    if (type) {
-        filters.type = type;
-    }
-
-    // Filter by price range
-    if (minPrice || maxPrice) {
-        filters.price = {};
-        if (minPrice) filters.price.$gte = parseFloat(minPrice);
-        if (maxPrice) filters.price.$lte = parseFloat(maxPrice);
-    }
-
-    // Filter by location
-    if (location) {
-        filters.location = location;
-    }
-
-    // Retrieve filtered and paginated equipment list
-    const equipmentList = await Equipment.find(filters).skip(skip).limit(limit);
-    const totalItems = await Equipment.countDocuments(filters);
-    const totalPages = Math.ceil(totalItems / limit);
-
-    res.status(200).json({
-        page,
-        totalPages,
-        limit,
-        totalItems,
-        equipmentList,
-    });
-} catch (error) {
-    res.status(500).json({ message: "Server Error", error });
-}
-};
-
-// get single equipment details by ID
-exports.getSingleEquipment = async (req, res) => {
-  try {
-    const equipmentId = req.params.id;
-
-    const equipment = await Equipment.findById(equipmentId);
-
-    if (!equipment) {
-      return res.status(400).json({ message: 'Equipment not found' });
-    }
-
-    res.status(200).json({
-      message: 'Equipment details retrieved successfully',
-      data: equipment,
-    });
-  } catch (error) {
-    res.status(500).json({message: error.message});
-  }
-};
-
-
-
 // Create new equipment listing (with images, pricing, availability)
 exports.createEquipment = async (req, res) => {
   try {
@@ -147,10 +81,102 @@ exports.createEquipment = async (req, res) => {
   }
 };
 
+exports.equi_Search_Filter_Fxn = async (req, res) => {
+try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Search and filter conditions
+    const { type, price, model, brand,current_condition,description } = req.query;
+    const filters = {};
+
+    // Filter by type
+    if (type) {
+        filters.type = type;
+    }
+
+     // Filter by price
+     if (price) {
+      filters.price = parseFloat(price);
+  }
+  // Filter by model
+    if (model) {
+        filters.model = model;
+    }
+  // Filter by brand
+    if (brand) {
+        filters.brand = brand;
+    }
+   // Filter by current_condition
+    if (current_condition) {
+        filters.current_condition = current_condition;
+    }
+     // Filter by description
+     if (description) {
+      filters.description = description;
+  }
+
+
+    // // Filter by price range
+    // if (minPrice || maxPrice) {
+    //     filters.price = {};
+    //     if (minPrice) filters.price.$gte = parseFloat(minPrice);
+    //     if (maxPrice) filters.price.$lte = parseFloat(maxPrice);
+    // }
+
+    // Retrieve filtered and paginated equipment list
+    const equipmentList = await Equipment.find(filters).skip(skip).limit(limit);
+    const totalItems = await Equipment.countDocuments(filters);
+    const totalPages = Math.ceil(totalItems / limit);
+
+    res.status(200).json({
+        page,
+        totalPages,
+        limit,
+        totalItems,
+        equipmentList,
+    });
+} catch (error) {
+    res.status(500).json({ message: "Server Error", error });
+}
+};
+
+// get single equipment details by IDexports.getSingleEquipment = async (req, res) => {
+  exports.getSingleEquipment = async (req, res) => {
+    try {
+      const { equipment_id } = req.body; 
+  
+      // Validate input
+      if (!equipment_id) {
+        return res.status(400).json({ message: 'Equipment ID is required' });
+      }
+  
+      // Find equipment by its ID
+      const equipment = await Equipment.findOne({ equipment_id }); 
+  
+      // If equipment is not found, return a 404 response
+      if (!equipment) {
+        return res.status(404).json({ message: 'Equipment not found' });
+      }
+  
+      // Send a success response
+      res.status(200).json({
+        message: 'Equipment details retrieved successfully',
+        data: equipment,
+      });
+    } catch (error) {
+      // Log the error and send a generic error response
+      console.error(error);
+      res.status(500).json({ message: 'An internal server error occurred' });
+    }
+  };
+  
+
 exports.updateEquipment = async (req, res) => {
   try {
-    const equipment_id = req.params.id;
     const { 
+      equipment_id,
       type, 
       brand, 
       model, 
@@ -164,7 +190,7 @@ exports.updateEquipment = async (req, res) => {
     const images = req.files ? req.files.map(file => file.path) : [];
 
     // Validate equipment ID and existence
-    const equipment = await Equipment.findById(equipment_id);
+    const equipment = await Equipment.findOne({equipment_id});
     if (!equipment) {
       return res.status(404).json({ message: "Equipment not found" });
     }
@@ -183,9 +209,7 @@ exports.updateEquipment = async (req, res) => {
     await equipment.save();
 
     res.status(200).json({
-      message: "Equipment updated successfully",
-      data: equipment,
-    });
+      message: "Equipment updated successfully", equipment});
   } catch (error) {
     console.error("Error updating equipment:", error);
     res.status(500).json({ message: "Error updating equipment", error });
@@ -196,9 +220,9 @@ exports.updateEquipment = async (req, res) => {
 // Delete existing equipment
 exports.deleteEquipment = async (req, res) => {
   try {
-    const equipment_id = req.params.id;
+    const {equipment_id} = req.body;
 
-    const equipment = await Equipment.findById(equipment_id);
+    const equipment = await Equipment.findOne({equipment_id});
 
     if (!equipment) {
       return res.status(404).json({ message: "Equipment not found" });
