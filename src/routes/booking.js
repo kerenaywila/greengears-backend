@@ -11,7 +11,7 @@ const router = express.Router();
 // router.post("/verifyAdmin", verifyToken)
 
 router.post("/bookings",  validateBooking, createBooking);         // Customer creates a booking
-router.post("/bookings/approve",   isAdmin, approveBooking); // Admin approves a booking
+router.post("/bookings/approve", verifyToken,  isAdmin, approveBooking); // Admin approves a booking
 router.post("/bookings/cancel",   cancelBooking);  // Admin/Customer cancels a booking
 router.post("/bookings/delete",   deleteCanceledBooking);  // Admin/Customer cancels a booking
 

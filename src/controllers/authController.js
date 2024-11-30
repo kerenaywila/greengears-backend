@@ -336,7 +336,7 @@ exports.deactivateUser_admin = async (req, res) => {
   
       const user = await Farmer.findById(userId);
       if (!user) {
-        return res.status(404).json({ message: "User not found" });
+        return res.status(404).json({ message: "User" });
       }
   
       user.isActive = false;
@@ -358,6 +358,11 @@ exports.user_login = async (req, res) => {
 
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    // Check if the user is active
+    if (!user.isActive) {
+      return res.status(403).json({ message: "Your account is inactive. Please contact support." });
     }
 
     // Check if the password is correct

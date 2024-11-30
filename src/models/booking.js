@@ -22,7 +22,7 @@ const rentalSchema = new mongoose.Schema({
                 message: "Return date must be after rental date.",
             },
         },
-        transactionId: { type: String, required: true },
+        transactionId: { type: String},
         reason: { type: String }, // Optional field
         status: { 
             type: String, 

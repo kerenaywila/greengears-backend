@@ -47,45 +47,6 @@ function validEmail(email) {
   return re.test(String(email).toLowerCase());
 }
 
-
-// Validate Admin Registration
-const validateAdmin_Reg = [
-  check("username")
-    .notEmpty()
-    .withMessage("Username is required"),
-
-  check("email")
-    .isEmail()
-    .withMessage("Invalid email format")
-    .notEmpty()
-    .withMessage("Email is required"),
-
-  check("password")
-    .isLength({ min: 8 })
-    .withMessage("Password must be at least 8 characters long")
-    .custom((password) => {
-      const validatePassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-      if (!validatePassword.test(password)) {
-        throw new Error(
-          "Password must include at least one uppercase letter, one lowercase letter, one number, and one special character"
-        );
-      }
-      return true; // Valid password
-    })
-    .notEmpty()
-    .withMessage("Password is required"),
-
-  (req, res, next) => {
-    const errors = validationResult(req);
-
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    next();
-  },
-];
-
 // Validate Admin Registration
 const validateAdmin_Reg = [
   check("username")

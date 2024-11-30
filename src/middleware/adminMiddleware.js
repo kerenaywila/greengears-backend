@@ -1,6 +1,7 @@
 // Middleware to verify JWT token
 const jwt = require('jsonwebtoken');
 const Farmer = require('../models/users');
+const Admin = require('../models/admin')
 
 exports.verifyToken = async (req, res, next)=>{
     try {
@@ -23,7 +24,7 @@ exports.verifyToken = async (req, res, next)=>{
             return res.status(401).json({message: "Invalid Login details"})
         }
 
-        const user = await Farmer.findOne({_id: decoded.userId})
+        const user = await Admin.findOne({_id: decoded.userId}) || Farmer.findOne({_id: decoded.userId})
 
         if(!user){
             return res.status(404).json({message: "User account not found!"})
@@ -33,10 +34,7 @@ exports.verifyToken = async (req, res, next)=>{
 
         next();
           
-        return res.status(200).json({
-            message: "Successful",
-            user: req.user
-          })
+        
     } catch (error) {
         return res.status(500).json({message: error.message});
     }
