@@ -1,3 +1,5 @@
+const Farmer = require('../models/users');
+
 // Middleware to verify JWT token
 exports.verifyToken = async (req, res, next)=>{
     try {
@@ -12,13 +14,13 @@ exports.verifyToken = async (req, res, next)=>{
     
         const token = tkk[1]
     
-        const decoded = jwt.verify(token, process.env.ACCESS_TOKEN)
+        const decoded = jwt.verify(token, process.env.JWT_SECRET)
 
         if(!decoded){
             return res.status(401).json({message: "Invalid Login details"})
         }
 
-        const user = await User.findOne({email: decoded.user.email})
+        const user = await Farmer.findOne({email: decoded.user.email})
 
         if(!user){
             return res.status(404).json({message: "User account not found!"})
