@@ -1,6 +1,9 @@
 const bcryptjs = require("bcryptjs")
 const Booking = require("../models/booking");
+const Equipment = require("../models/equipment");
+const Farmer = require('../models/users');
 const mongoose = require("mongoose");
+const moment = require('moment');
 
 
 // Create Booking
@@ -8,17 +11,44 @@ exports.createBooking = async (req, res) => {
   try {
     const {
       customer_id,
-      // rental_frequency,
-      equipment_type,
-      rental_duration,
-      rental_cost,
-      // customer_rating,
+      equipment_id,
       rental_date,
       return_date,
       status,
     } = req.body;
 
+    // Fetch Renter details from the database
+    const renter = await Farmer.findOne({customer_id});
+
+    if (!renter) {
+      return res.status(404).json({
+        message: 'Renter not found. Please sign up.',
+      });
+    }
+       // Fetch equipment details from the database
+       const equipment = await Equipment.findOne({equipment_id});
+
+       if (!equipment) {
+         return res.status(404).json({
+           message: 'Equipment not found.',
+         });
+       }
   
+    // Check if the equipment is in stock
+  
+if (equipment.available !== true) {
+  return res.status(400).json({
+    message: 'Equipment is out of stock.',
+  });
+}
+    // Calculate the rental duration in days
+    const rentalDuration = moment(return_date).diff(moment(rental_date), 'days');
+
+    if (rentalDuration <= 0) {
+      return res.status(400).json({
+        message: 'Invalid rental period. The return date must be after the rental date.',
+      });
+    }
         // Validate rental_date and return_date
         const now = new Date();
         const rentalDate = new Date(rental_date);
@@ -38,8 +68,12 @@ exports.createBooking = async (req, res) => {
           });
         }
 
+// Calculate rental cost using equipment's daily rate
+const rental_cost = rentalDuration * equipment.price;
+  
+
      // Generate unique Rental ID for Tracking
-    const generateRentalID = async (existingIDs) => {
+     const generateRentalID = async (existingIDs) => {
       const letters = "abcdefghijklmnopqrstuvwxyz";
       const numbers = "0123456789";
     
@@ -64,38 +98,132 @@ exports.createBooking = async (req, res) => {
     const existingIDs = await Booking.distinct("rental_id");
     const rental_id = await generateRentalID(existingIDs);
 
+// Create the booking object
+    const booking = await Booking.create({
+      rental_id,
+      customer_id,
+      equipment_id,
+      rental_date,
+      return_date,
+      rental_duration: rentalDuration,
+      rental_cost,
+      status,
+    });
+    // Save booking to database (mocked here, replace with actual DB save logic)
+    // Example: const savedBooking = await Booking.create(booking);
+    // const savedBooking = { id: 1, ...booking }; // Mocked response
+
+    // res.status(201).json({
+    //   message: 'Booking created successfully.',
+    //   booking: savedBooking,
+    // });
+
+        // Respond with success
+        return res.status(201).json({
+          message: "Booking created successfully",
+          booking,
+        });
+      } catch (error) {
+        console.error("Error creating booking:", error.message); // Improved debugging log
+        return res.status(500).json({
+          message: "Error creating booking",
+          error: error.message,
+        });
+      }
+    };
+
+// exports.createBooking = async (req, res) => {
+//   try {
+//     const {
+//       customer_id,
+//       // rental_frequency,
+//       equipment_type,
+//       rental_duration,
+//       rental_cost,
+//       // customer_rating,
+//       rental_date,
+//       return_date,
+//       status,
+//     } = req.body;
+
+  
+//         // Validate rental_date and return_date
+//         const now = new Date();
+//         const rentalDate = new Date(rental_date);
+//         const returnDate = new Date(return_date);
+    
+//         if (rentalDate <= now) {
+//           return res.status(400).json({
+//             success: false,
+//             message: "Your selected booking start date has passed. Please select a valid start date.",
+//           });
+//         }
+    
+//         if (returnDate <= rentalDate) {
+//           return res.status(400).json({
+//             success: false,
+//             message: "The return date must be after the rental start date.",
+//           });
+//         }
+
+//      // Generate unique Rental ID for Tracking
+//     const generateRentalID = async (existingIDs) => {
+//       const letters = "abcdefghijklmnopqrstuvwxyz";
+//       const numbers = "0123456789";
+    
+//       let newID;
+//       do {
+//           const randomLetters = Array.from({ length: 3 }, () =>
+//               letters.charAt(Math.floor(Math.random() * letters.length))
+//           ).join("");
+    
+//           const randomNumbers = Array.from({ length: 3 }, () =>
+//               numbers.charAt(Math.floor(Math.random() * numbers.length))
+//           ).join("");
+    
+//           newID = `Rent${randomNumbers}${randomLetters}`;
+//       } while (existingIDs.includes(newID)); // Ensure unique ID
+    
+//       return newID;
+//     };
+    
+
+//     // Generate unique customer ID
+//     const existingIDs = await Booking.distinct("rental_id");
+//     const rental_id = await generateRentalID(existingIDs);
+
    
 
       
-    // Create the booking
-    const booking = await Booking.create({
+//     // Create the booking
+//     const booking = await Booking.create({
       
-      rental_id,
-      customer_id, // Custmer ID generated during sign up
-      // rental_frequency,
-      equipment_type,
-      rental_duration,
-      rental_cost,
-      // customer_rating,
-      rental_date,
-      return_date,
-      status,
-    });
+//       rental_id,
+//       customer_id, // Custmer ID generated during sign up
+//       // rental_frequency,
+//       equipment_type,
+//       rental_duration,
+//       rental_cost,
+//       // customer_rating,
+//       rental_date,
+//       return_date,
+//       status,
+//     });
 
 
-    // Respond with success
-    return res.status(201).json({
-      message: "Booking created successfully",
-      booking,
-    });
-  } catch (error) {
-    console.error("Error creating booking:", error.message); // Improved debugging log
-    return res.status(500).json({
-      message: "Error creating booking",
-      error: error.message,
-    });
-  }
-};
+//     // Respond with success
+//     return res.status(201).json({
+//       message: "Booking created successfully",
+//       booking,
+//     });
+//   } catch (error) {
+//     console.error("Error creating booking:", error.message); // Improved debugging log
+//     return res.status(500).json({
+//       message: "Error creating booking",
+//       error: error.message,
+//     });
+//   }
+// };
 
 
 // Approve Booking
