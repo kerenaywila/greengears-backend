@@ -1,5 +1,3 @@
-const Farmer = require('../models/users');
-
 // Middleware to verify JWT token
 const jwt = require('jsonwebtoken');
 const Farmer = require('../models/users');

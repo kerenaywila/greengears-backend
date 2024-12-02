@@ -14,13 +14,15 @@ exports.createEquipment = async (req, res) => {
       purchase_date,
       description,
       current_condition,
-      available,
+      available,   
     } = req.body;
 
     // Validate required fields
     if (!type || !brand || !model || !price || !purchase_date || !current_condition) {
       return res.status(400).json({ message: "All required fields must be provided." });
     }
+
+    
 
     // Parse and validate inputs
     const parsedPrice = parseFloat(price);
@@ -145,7 +147,7 @@ try {
 // get single equipment details by IDexports.getSingleEquipment = async (req, res) => {
   exports.getSingleEquipment = async (req, res) => {
     try {
-      const { equipment_id } = req.body; 
+      const { equipment_id } = req.params; 
   
       // Validate input
       if (!equipment_id) {
@@ -153,8 +155,8 @@ try {
       }
   
       // Find equipment by its ID
-      const equipment = await Equipment.findOne({ equipment_id }); 
-  
+      const equipment = await Equipment.findOne({ equipment_id });
+ 
       // If equipment is not found, return a 404 response
       if (!equipment) {
         return res.status(404).json({ message: 'Equipment not found' });
@@ -245,4 +247,3 @@ exports.deleteEquipment = async (req, res) => {
     res.status(500).json({ message: "Error deleting equipment", error });
   }
 };
-

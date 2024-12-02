@@ -13,7 +13,7 @@ router.post("/create-equipment",  createEquipment); // Allow up to 5 images
 router.get("/equipment/pagination", equi_Search_Filter_Fxn);
 
 // Get/search equipment
-router.post("/single/equipment_id", getSingleEquipment);
+router.get("/get-equipment/:equipment_id", getSingleEquipment);
 
 // PUT /api/equipment/:id (Update equipment)
 // router.put("/equipment/:id", upload.array('images', 5), updateEquipment); // Allow up to 5 images
