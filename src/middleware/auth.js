@@ -96,16 +96,10 @@ function validEmail(email) {
 
 const validateBooking = [
   check("customer_id").notEmpty().withMessage("Customer ID is required"),
+  check("equipment_id").notEmpty().withMessage("Customer ID is required"), 
   check("rental_date").isISO8601().withMessage("Rental date must be a valid date"),
   check("return_date").isISO8601().withMessage("Return date must be a valid date"),
-  check("rental_duration")
-    .optional()
-    .isInt({ min: 1 })
-    .withMessage("Rental duration must be a positive integer"),
-  check("rental_cost")
-    .optional()
-    .isDecimal()
-    .withMessage("Rental cost must be a valid number"),
+ 
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -179,5 +173,7 @@ const validateEquipmentUpdate = [
     next();
   },
 ];
+
+
 
 module.exports = { validateRegistration, validateAdmin_Reg,validateBooking, validateForgotPassword, validatePasswordRest, validateEquipmentUpdate};

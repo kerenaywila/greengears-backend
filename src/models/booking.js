@@ -7,7 +7,7 @@ const rentalSchema = new mongoose.Schema({
       rental_id: { type: String, required: true },
       customer_id: { type: String, required: true }, // Foreign key linking to Customer
       // rental_frequency: { type: Number, required: true }, // Number of times customer rents equipment
-      equipment_type: { type: String, required: true },
+      equipment_id: { type: String, required: true },
       rental_duration: { type: Number, required: true }, // Duration in days or weeks
       rental_cost: { type: Number, required: true , min: 0}, // Total cost of the rental
       // customer_rating: { type: Number, required: true }, // Rating given by customer, e.g., out of 5
@@ -22,7 +22,7 @@ const rentalSchema = new mongoose.Schema({
                 message: "Return date must be after rental date.",
             },
         },
-        transactionId: { type: String, required: true },
+        transactionId: { type: String },
         reason: { type: String }, // Optional field
         status: { 
             type: String, 
