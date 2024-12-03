@@ -5,13 +5,29 @@ const Schema = mongoose.Schema
 
 const equipmentSchema = new mongoose.Schema({
   equipment_id: { type: String, unique: true, required: true },
-  type: { type: String, required: true },         // Type of equipment, e.g., tractor, plow
-  brand: { type: String, required: true },        // Brand of the equipment
-  model: { type: String, required: true },  // Model name or number
+  product_name: { type: String, required: true },
+  product_details: { type: String, required: true },
+  specification: {
+    engine_power: { type: String, required: true },
+    engine_type: { type: String, required: true },
+    transmission: { type: String, required: true },
+    PTO_power: { type: String, required: true },
+    hydraulic_system: { type: String, required: true },
+    fuel_tank_Capacity: { type: String, required: true },
+    weight: { type: String, required: true },
+  },
+  features: {
+    power_efficiency: { type: String, required: true },
+    versatility: { type: String, required: true },
+    enhanced_visibility: { type: String, required: true },
+    comfort_n_ergonomics: { type: String, required: true },
+  },
+  categories: { 
+    type: String, 
+    enum: ["Tractor", "Tillage", "Haversting Eqipment", "Irrigation Equipment", "Soil Preparation","Grain Storage", "Utility vehicles"], 
+    required: true},
   price:  { type: Number, required: true },   
-  purchase_date: { type: Date, required: true },
-  description: { type: String, required: true, default: Date.now },
-  current_condition: { type: String, enum: ['good', 'needs repair', 'excellent'], required: true }, // e.g., 'good', 'needs repair', 'excellent'
+
   available: { type: Boolean, required: true, default: true},
   createdAt: {
     type: Date,
@@ -23,7 +39,9 @@ const equipmentSchema = new mongoose.Schema({
   },
 });
 
-
+  // purchase_date: { type: Date, required: true },
+// description: { type: String, required: true, default: Date.now },
+  // current_condition: { type: String, enum: ['good', 'needs repair', 'excellent'], required: true }, // e.g., 'good', 'needs repair', 'excellent'
 
 // const EquipmentRentalHistorySchema = new mongoose.Schema({
 //   rental_id: { type: mongoose.Schema.Types.ObjectId, required: true },
