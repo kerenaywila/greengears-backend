@@ -118,6 +118,7 @@ const rental_cost = rentalDuration * equipment.price;
     //   booking: savedBooking,
     // });
 
+    
         // Respond with success
         return res.status(201).json({
           message: "Booking created successfully",

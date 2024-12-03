@@ -7,18 +7,32 @@ const fs = require("fs");
 exports.createEquipment = async (req, res) => {
   try {
     const {
-      type,
-      brand,
-      model,
-      price,
-      purchase_date,
-      description,
-      current_condition,
-      available,
+      product_name, 
+      product_details,
+      specification, 
+      features, 
+      categories,
+      price   
     } = req.body;
 
+
     // Validate required fields
-    if (!type || !brand || !model || !price || !purchase_date || !current_condition) {
+    if (!product_name 
+      || !product_details 
+      || !specification.engine_power 
+      || !specification.engine_type
+      || !specification.transmission
+      || !specification.PTO_power
+      || !specification.hydraulic_system
+      || !specification.fuel_tank_Capacity
+      || !specification.weight
+      || !features.power_efficiency 
+      || !features.versatility
+      || !features.enhanced_visibility
+      || !features.comfort_n_ergonomics      
+      || !categories 
+      || !price) 
+      {
       return res.status(400).json({ message: "All required fields must be provided." });
     }
 
@@ -28,11 +42,10 @@ exports.createEquipment = async (req, res) => {
       return res.status(400).json({ message: "Price must be a valid number." });
     }
 
-    const parsedDate = new Date(purchase_date);
-    if (isNaN(parsedDate.getTime())) {
-      return res.status(400).json({ message: "Purchase date must be a valid date." });
-    }
-
+    // const parsedDate = new Date(purchase_date);
+    // if (isNaN(parsedDate.getTime())) {
+    //   return res.status(400).json({ message: "Purchase date must be a valid date." });
+    // }
     const images = req.files ? req.files.map((file) => file.path) : [];
 
     // Fetch existing IDs to avoid duplicates
@@ -56,13 +69,13 @@ exports.createEquipment = async (req, res) => {
     // Create new equipment document
     const newEquipment = new Equipment({
       equipment_id,
-      type,
-      brand,
-      model,
-      price: parsedPrice,
-      purchase_date: parsedDate,
-      description,
-      current_condition,
+      product_name, 
+      product_details,
+      specification, 
+      features, 
+      categories,
+      price,
+     
       available: available === "true" || available === true,
       images,
     });
@@ -88,25 +101,74 @@ try {
     const skip = (page - 1) * limit;
 
     // Search and filter conditions
-    const { type, price, model, brand,current_condition,description } = req.query;
+    const { product_name, specification, features, categories,price} = req.query;
     const filters = {};
 
     // Filter by type
-    if (type) {
-        filters.type = type;
+    if (product_name) {
+        filters.product_name = product_name;
     }
 
      // Filter by price
      if (price) {
       filters.price = parseFloat(price);
   }
-  // Filter by model
-    if (model) {
-        filters.model = model;
+
+  // Filter by Engine Power specification
+    if (specification.engine_power) {
+        filters.specification.engine_power = specification.engine_power;
     }
+  // Filter by Engine Type specification
+    if (specification.engine_type) {
+      filters.specification.engine_type = specification.engine_type;
+  }
+  // Filter by transmission specification
+    if (specification.transmission) {
+      filters.specification.transmission = specification.transmission;
+  }
+
+   // Filter by PTO Power specification
+   if (specification.PTO_power) {
+    filters.specification.PTO_power = specification.PTO_power;
+}
+   // Filter by hydraulic_system specification
+   if (specification.hydraulic_system) {
+    filters.specification.hydraulic_system = specification.hydraulic_system;
+}
+
+   // Filter by fuel_tank_Capacity specification
+   if (specification.fuel_tank_Capacity) {
+    filters.specification.fuel_tank_Capacity = specification.fuel_tank_Capacity;
+}
+   // Filter by weight specification
+   if (specification.weight) {
+    filters.specification.weight = specification.weight;
+}
+
+!features.power_efficiency 
+      || !features.versatility
+      || !features.enhanced_visibility
+      || !features.comfort_n_ergonomics 
+  // Filter by power_efficiency features
+  if (features.power_efficiency) {
+    filters.features.power_efficiency = features.power_efficiency;
+}
+  // Filter by versatility features
+  if (features.versatility) {
+    filters.features.versatility = features.versatility;
+}
+  // Filter by enhanced_visibility features
+  if (features.enhanced_visibility) {
+    filters.features.enhanced_visibility = features.enhanced_visibility;
+}
+
+  // Filter by comfort_n_ergonomics features
+  if (features.comfort_n_ergonomics) {
+    filters.features.comfort_n_ergonomics = features.comfort_n_ergonomics;
+}
   // Filter by brand
-    if (brand) {
-        filters.brand = brand;
+    if (categories) {
+        filters.categories = categories;
     }
    // Filter by current_condition
     if (current_condition) {

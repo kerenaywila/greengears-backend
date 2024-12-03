@@ -183,7 +183,7 @@ exports.resendOtp_user = async (req, res) => {
 
     // Generate new OTP and update expiration
     user.generateOTP();
-    user.otpExpires = new Date(Date.now() + 5 * 60 * 1000); // Extend expiration time
+    user.otpExpires = new Date(Date.now() + 0.5 * 60 * 1000); // Extend expiration time
     await user.save();
 
     // Send the new OTP email
@@ -206,11 +206,11 @@ exports.admin_singup = async (req, res) => {
       req.body;
 
     // Check if the user already exists
-    let user = await Admin.findOne({ email });
-    if (user) return res.status(400).json({ message: "User already exists" });
+    let admin = await Admin.findOne({ email });
+    if ( admin) return res.status(400).json({ message: "User already exists" });
 
     // Create new user and hash password
-    user = new Admin({
+    admin = new Admin({
       username,
       email,
       password: await bcryptjs.hash(password, 8),
@@ -218,16 +218,16 @@ exports.admin_singup = async (req, res) => {
       role,
       permissions: permissions || {}, // Ensure permissions object is initialized
     });
-    user.generateOTP();
+    admin.generateOTP();
 
     // Send OTP email
     await sendMail(
       email,
       "Verify your Account",
-      `<p>Your OTP code is <strong>${user.otp}</strong>. It expires in 10 minutes.</p>`
+      `<p>Your OTP code is <strong>${ admin.otp}</strong>. It expires in 10 minutes.</p>`
     );
 
-    await user.save();
+    await  admin.save();
     res.status(200).json({
       message:
         "Signup successful! Please check your email for OTP verification.",
@@ -241,38 +241,38 @@ exports.admin_singup = async (req, res) => {
 exports.verifyOTP_admin = async (req, res) => {
   try {
     const { email, otp } = req.body;
-    let user = await Admin.findOne({ email });
+    let  admin = await Admin.findOne({ email });
 
-    if (!user) return res.status(400).json({ message: "User not found" });
-    if (user.otp !== otp || user.otpExpires < Date.now()) {
+    if (!admin) return res.status(400).json({ message: "User not found" });
+    if ( admin.otp !== otp ||  admin.otpExpires < Date.now()) {
       return res.status(400).json({ message: "Invalid or expired OTP" });
     }
 
     // Check role and set permissions if user is an admin
-    if (user.role === "admin") {
+    if (admin.role === "admin") {
       // Ensure permissions object exists
-      user.permissions = user.permissions || {};
-      user.permissions.manageUsers = true;
-      user.permissions.manageEquipment = true;
-      user.permissions.viewReports = true;
-      user.permissions.managePayments = true;
+      admin.permissions = user.permissions || {};
+      admin.permissions.manageUsers = true;
+      admin.permissions.manageEquipment = true;
+      admin.permissions.viewReports = true;
+      admin.permissions.managePayments = true;
     }
 
     // Update user verification status and clear OTP
-    user.isVerified = true;
-    user.otp = undefined;
-    user.otpExpires = undefined;
+    admin.isVerified = true;
+    admin.otp = undefined;
+    admin.otpExpires = undefined;
 
-    await user.save();
+    await  admin.save();
 
     // Send welcome email
     await sendMail(
       email,
       "Welcome to Agricultural Equipment Rental Platform",
-      `<p>Hi ${user.username}, welcome to our platform!</p>`
+      `<p>Hi ${admin.username}, welcome to our platform!</p>`
     );
 
-    res.status(200).json({ message: "Account verified successfully!", user });
+    res.status(200).json({ message: "Account verified successfully!",  admin });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -281,26 +281,26 @@ exports.verifyOTP_admin = async (req, res) => {
 exports.resendOtp_admin = async (req, res) => {
   try {
     const { email } = req.body;
-    let user = await Admin.findOne({ email });
+    let  admin = await Admin.findOne({ email });
 
-    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!admin) return res.status(404).json({ error: "User not found" });
 
     // Check if OTP is already valid
-    if (user.otpExpires > Date.now()) {
+    if (admin.otpExpires > Date.now()) {
       return res.status(400).json({ error: "Current OTP is still valid." });
     }
 
     // Generate new OTP and update expiration
   
-    user.generateOTP();
-    user.otpExpires = new Date(Date.now() + 5 * 60 * 1000); // Extend expiration time
+    admin.generateOTP();
+    admin.otpExpires = new Date(Date.now() + 5 * 60 * 1000); // Extend expiration time
     await user.save();
 
     // Send the new OTP email
     await sendMail(
-      user.email,
+      admin.email,
       "Resend OTP",
-      `<p>Your new OTP code is <strong>${user.otp}</strong>. It expires in 10 minutes.</p>`
+      `<p>Your new OTP code is <strong>${admin.otp}</strong>. It expires in 10 minutes.</p>`
     );
 
     res.json({ message: "OTP resent successfully. Please check your email." });
