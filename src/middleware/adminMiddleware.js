@@ -1,6 +1,8 @@
-const Farmer = require('../models/users');
-
 // Middleware to verify JWT token
+const jwt = require('jsonwebtoken');
+const Farmer = require('../models/users');
+const Admin = require('../models/admin')
+
 exports.verifyToken = async (req, res, next)=>{
     try {
            
@@ -27,18 +29,15 @@ exports.verifyToken = async (req, res, next)=>{
         }
     
         req.user = user
-        next()
+
+        next();
           
-        return res.status(200).json({
-            message: "Successful",
-            user: req.user
-          })
+        
     } catch (error) {
         return res.status(500).json({message: error.message});
     }
-
     
-  };
+};
 
     // Middleware to check if the user is an Admin
 exports.isAdmin = (req, res, next) => {
