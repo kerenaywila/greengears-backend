@@ -12,7 +12,8 @@ exports.createEquipment = async (req, res) => {
       specification, 
       features, 
       categories,
-      price   
+      price,
+      available,
     } = req.body;
 
 
@@ -35,6 +36,8 @@ exports.createEquipment = async (req, res) => {
       {
       return res.status(400).json({ message: "All required fields must be provided." });
     }
+
+    
 
     // Parse and validate inputs
     const parsedPrice = parseFloat(price);
@@ -74,8 +77,8 @@ exports.createEquipment = async (req, res) => {
       specification, 
       features, 
       categories,
-      price,
-     
+      price,     
+
       available: available === "true" || available === true,
       images,
     });
@@ -207,7 +210,7 @@ try {
 // get single equipment details by IDexports.getSingleEquipment = async (req, res) => {
   exports.getSingleEquipment = async (req, res) => {
     try {
-      const { equipment_id } = req.body; 
+      const { equipment_id } = req.params; 
   
       // Validate input
       if (!equipment_id) {
@@ -215,8 +218,8 @@ try {
       }
   
       // Find equipment by its ID
-      const equipment = await Equipment.findOne({ equipment_id }); 
-  
+      const equipment = await Equipment.findOne({ equipment_id });
+ 
       // If equipment is not found, return a 404 response
       if (!equipment) {
         return res.status(404).json({ message: 'Equipment not found' });
@@ -233,7 +236,40 @@ try {
       res.status(500).json({ message: 'An internal server error occurred' });
     }
   };
+
+//Get equipments by category
+exports.getEquipmentByCategory = async (req, res) => {
+    try {
+      const { category } = req.params; // Get the category from the request parameters
+
+      // Check if category is valid
+      const validCategories = [
+        "Tractor Equipment",
+        "Tillage Equipment",
+        "Harvesting Equipment",
+        "Irrigation Equipment",
+        "Soil Preparation",
+        "Grain Storage",
+        "Utility vehicles",
+        "Precision Farming",
+      ];
   
+      if (!validCategories.includes(category)) {
+        return res.status(400).json({ error: "Invalid category specified" });
+      }
+  
+      const equipments = await Equipment.find({ categories: category });
+  
+      if (equipments.length === 0) {
+        return res.status(404).json({ message: "No equipment found in this category" });
+      }
+  
+      res.status(200).json({ message: 'Equipments retrieved successfully', equipments });
+    } catch (error) {
+      res.status(500).json({ message: "An error occurred while fetching equipment by category", error: error.message });
+    }
+  };
+
 
 exports.updateEquipment = async (req, res) => {
   try {
@@ -307,4 +343,3 @@ exports.deleteEquipment = async (req, res) => {
     res.status(500).json({ message: "Error deleting equipment", error });
   }
 };
-

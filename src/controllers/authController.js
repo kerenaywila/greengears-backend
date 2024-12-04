@@ -308,9 +308,10 @@ exports.resendOtp_admin = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
 //ACTIVATE USER
 
-exports.activateUser = async (req, res) => {
+exports.activateUser_admin = async (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -322,25 +323,26 @@ exports.activateUser = async (req, res) => {
     user.isActive = true;
     await user.save();
 
-    return res.status(200).json({ message: "Successful", user });
+    return res.status(200).json({ message: "User activated successfully"});
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
 };
+
 // DEACTIVATE USER
-exports.deactivateUser = async (req, res) => {
+exports.deactivateUser_admin = async (req, res) => {
     try {
       const { userId } = req.params;
   
       const user = await Farmer.findById(userId);
       if (!user) {
-        return res.status(404).json({ message: "User not found" });
+        return res.status(404).json({ message: "User" });
       }
   
       user.isActive = false;
       await user.save();
   
-      return res.status(200).json({ message: "User deactivated successfully", user });
+      return res.status(200).json({ message: "User deactivated successfully"});
     } catch (error) {
       return res.status(500).json({ message: error.message });
     }
@@ -356,6 +358,11 @@ exports.user_login = async (req, res) => {
 
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    // Check if the user is active
+    if (!user.isActive) {
+      return res.status(403).json({ message: "Your account is inactive. Please contact support." });
     }
 
     // Check if the password is correct
@@ -434,7 +441,7 @@ await sendMail(
   `
 );
     res.status(200).json({ message: "Login successful", token });
-  } catch (error) {
+  } catch (error) {n
     res.status(500).json({ error: error.message });
   }
 };

@@ -24,7 +24,7 @@ const equipmentSchema = new mongoose.Schema({
   },
   categories: { 
     type: String, 
-    enum: ["Tractor", "Tillage", "Haversting Eqipment", "Irrigation Equipment", "Soil Preparation","Grain Storage", "Utility vehicles"], 
+    enum: ["Tractor Equipment", "Tillage Equipment", "Harvesting Equipment", "Irrigation Equipment", "Soil Preparation","Grain Storage", "Utility vehicles", "Precision Farming"], 
     required: true},
   price:  { type: Number, required: true },   
 

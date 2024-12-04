@@ -47,7 +47,6 @@ function validEmail(email) {
   return re.test(String(email).toLowerCase());
 }
 
-
 // Validate Admin Registration
 const validateAdmin_Reg = [
   check("username")
@@ -85,14 +84,6 @@ const validateAdmin_Reg = [
     next();
   },
 ];
-
-
-
-function validEmail(email) {
-  const re =
-    /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-  return re.test(String(email).toLowerCase());
-}
 
 const validateBooking = [
   check("customer_id").notEmpty().withMessage("Customer ID is required"),
