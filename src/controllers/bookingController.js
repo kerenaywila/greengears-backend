@@ -4,6 +4,7 @@ const Equipment = require("../models/equipment");
 const Farmer = require('../models/users');
 const mongoose = require("mongoose");
 const moment = require('moment');
+const sendMail = require("../utils/mailer");
 
 
 // Create Booking
