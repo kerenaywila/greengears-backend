@@ -3,9 +3,10 @@ const Farmer = require('../models/users');
 
 const ReportSchema = new mongoose.Schema(
   {
-    equipment_id: { type: String, required: true },
-    farmer_id: { type: mongoose.Schema.Types.ObjectId, ref: "Farmer", required: true},
-    description: { type: String, required: true },
+    customer_id: { type: String, required: true },
+    name: { type: String, required: true },
+    email: { type: String, required: true },
+    message: { type: String, required: true },
     status: { type: String, enum: ["Pending", "Resolved"], default: "Pending" },
   },
   { timestamps: true }

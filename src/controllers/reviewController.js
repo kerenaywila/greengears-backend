@@ -1,13 +1,23 @@
 const Review = require("../models/reviews");
 const Equipment = require("../models/equipment");
+const Farmer = require('../models/users');
 
 exports.addReview = async (req, res) => {
   try {
-    const { farmer_id, equipment_id, rating, comment } = req.body;
+    const { customer_id, equipment_id, rating, comment } = req.body;
 
     // Validate input
-    if (!farmer_id || !equipment_id || !rating) {
-      return res.status(400).json({ message: "Missing required fields." });
+    if (!customer_id || !equipment_id || !rating) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    //validate user
+    const user = await Farmer.findOne({ customer_id });
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
     const equipment = await Equipment.findOne({ equipment_id });
@@ -19,7 +29,7 @@ exports.addReview = async (req, res) => {
     }
 
     const newReview = new Review({
-      farmer_id,
+      customer_id,
       equipment_id,
       rating,
       comment,
