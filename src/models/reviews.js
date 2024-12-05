@@ -1,8 +1,8 @@
 const mongoose = require("mongoose");
 
 const reviewSchema = new mongoose.Schema({
-  farmer_id: { type: mongoose.Schema.Types.ObjectId, ref: "Farmer", required: true },
-  equipment_id: { type: String, unique: true, required: true },
+  customer_id: { type: String, required: true },
+  equipment_id: { type: String, required: true },
   rating: { type: Number, min: 1, max: 5, required: true },
   comment: { type: String, maxlength: 500 },
   createdAt: { type: Date, default: Date.now },
@@ -11,8 +11,8 @@ const reviewSchema = new mongoose.Schema({
 });
 
 
-//Add an index to improve query performance for farmer and equipment lookups
-reviewSchema.index({ farmer_id: 1, equipment_id: 1 });
+//Add an index to improve query performance for equipment lookups
+//reviewSchema.index({ equipment_id: 1 });
 
 const Review = mongoose.model('Review', reviewSchema);
 
