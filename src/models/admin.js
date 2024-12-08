@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const Schema = mongoose.Schema
 const crypto = require('crypto');
 
 const adminSchema = new mongoose.Schema({
@@ -13,6 +14,8 @@ const adminSchema = new mongoose.Schema({
     viewReports: { type: Boolean, default: false },
     managePayments: { type: Boolean, default: false },
   },
+otp: String,
+otpExpires: Date,
   createdAt: {
     type: Date,
     default: Date.now,

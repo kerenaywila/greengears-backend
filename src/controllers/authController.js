@@ -34,14 +34,6 @@ exports.user_signup = async (req, res) => {
             name,
             email, 
             password, 
-            contactNumber, 
-            role, 
-            age, 
-            gender, 
-            farm_size, 
-            crop_types, 
-            location, 
-            equipmentPosted 
         } = req.body;
 
         // Check if the user already exists
@@ -51,16 +43,16 @@ exports.user_signup = async (req, res) => {
         
 
         // Validate and map `farm_size`
-        const sizeMapping = {
-            small: 10,
-            medium: 50,
-            large: 100,
-        };
+        // const sizeMapping = {
+        //     small: 10,
+        //     medium: 50,
+        //     large: 100,
+        // };
 
-        const mappedFarmSize = sizeMapping[farm_size?.toLowerCase()] || null;
-        if (!mappedFarmSize) {
-            return res.status(400).json({ message: "Invalid farm_size provided. Valid options are 'small', 'medium', or 'large'." });
-        }
+        // const mappedFarmSize = sizeMapping[farm_size?.toLowerCase()] || null;
+        // if (!mappedFarmSize) {
+        //     return res.status(400).json({ message: "Invalid farm_size provided. Valid options are 'small', 'medium', or 'large'." });
+        // }
 
       
         // customer_id: customer_id || uuidv4();
@@ -84,15 +76,7 @@ exports.user_signup = async (req, res) => {
             customer_id,
             name,
             email,
-            password: await bcryptjs.hash(password, 8),
-            contactNumber,
-            role,
-            age,
-            gender,
-            farm_size: mappedFarmSize,
-            crop_types,
-            location,
-            equipmentPosted,
+            password: await bcryptjs.hash(password, 8)
         });
 
         // Generate OTP for verification
@@ -202,78 +186,73 @@ exports.resendOtp_user = async (req, res) => {
 // Admin Signup Controller
 exports.admin_singup = async (req, res) => {
   try {
-    const { username, email, password, contactNumber, role, permissions } =
-      req.body;
+    const { username, email, password, contactNumber, role, permissions } = req.body;
 
-    // Check if the user already exists
     let admin = await Admin.findOne({ email });
-    if ( admin) return res.status(400).json({ message: "User already exists" });
+    if (admin) return res.status(400).json({ message: "User already exists" });
 
-    // Create new user and hash password
     admin = new Admin({
       username,
       email,
       password: await bcryptjs.hash(password, 8),
       contactNumber,
       role,
-      permissions: permissions || {}, // Ensure permissions object is initialized
+      permissions: permissions || {},
     });
-    admin.generateOTP();
 
-    // Send OTP email
+    admin.generateOTP();
+    admin.otpExpires = Date.now() + 10 * 60 * 1000;
+
     await sendMail(
       email,
       "Verify your Account",
-      `<p>Your OTP code is <strong>${ admin.otp}</strong>. It expires in 10 minutes.</p>`
+      `<p>Your OTP code is <strong>${admin.otp}</strong>. It expires in 10 minutes.</p>`
     );
 
-    await  admin.save();
+    await admin.save();
     res.status(200).json({
-      message:
-        "Signup successful! Please check your email for OTP verification.",
+      message: "Signup successful! Please check your email for OTP verification.",
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: error.message });
   }
 };
-
 // OTP Verification Controller for Admin
 exports.verifyOTP_admin = async (req, res) => {
   try {
     const { email, otp } = req.body;
-    let  admin = await Admin.findOne({ email });
+    let admin = await Admin.findOne({ email });
 
     if (!admin) return res.status(400).json({ message: "User not found" });
-    if ( admin.otp !== otp ||  admin.otpExpires < Date.now()) {
+
+    if (admin.otp !== otp || !admin.otpExpires || admin.otpExpires < Date.now()) {
       return res.status(400).json({ message: "Invalid or expired OTP" });
     }
 
-    // Check role and set permissions if user is an admin
     if (admin.role === "admin") {
-      // Ensure permissions object exists
-      admin.permissions = user.permissions || {};
+      admin.permissions = admin.permissions || {};
       admin.permissions.manageUsers = true;
       admin.permissions.manageEquipment = true;
       admin.permissions.viewReports = true;
       admin.permissions.managePayments = true;
     }
 
-    // Update user verification status and clear OTP
     admin.isVerified = true;
     admin.otp = undefined;
     admin.otpExpires = undefined;
 
-    await  admin.save();
+    await admin.save();
 
-    // Send welcome email
     await sendMail(
       email,
       "Welcome to Agricultural Equipment Rental Platform",
       `<p>Hi ${admin.username}, welcome to our platform!</p>`
     );
 
-    res.status(200).json({ message: "Account verified successfully!",  admin });
+    res.status(200).json({ message: "Account verified successfully!", admin });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -281,7 +260,7 @@ exports.verifyOTP_admin = async (req, res) => {
 exports.resendOtp_admin = async (req, res) => {
   try {
     const { email } = req.body;
-    let  admin = await Admin.findOne({ email });
+    let admin = await Admin.findOne({ email });
 
     if (!admin) return res.status(404).json({ error: "User not found" });
 
@@ -395,47 +374,52 @@ exports.Admin_login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validate input
-    if (!email || !password) {
-      return res.status(400).json({ message: "Email and password are required" });
-    }
-
     // Find Admin by email
-    const user = await Admin.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
+    const admin = await Admin.findOne({ email });
+    if (!admin) {
+      return res.status(400).json({ message: "Invalid credentials" }); // Avoid revealing if the email exists
     }
 
     // Compare passwords
-    const passwordMatch = await bcryptjs.compare(password, user.password);
+    const passwordMatch = await bcryptjs.compare(password, admin.password);
     if (!passwordMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: user._id, role: user.role },process.env.JWT_SECRET, { expiresIn: "1h" });
-    
-// Get current date and time
-const currentDate = new Date().toLocaleString();
+      { userId: admin._id, role: admin.role },
+      process.env.JWT_SECRET || "default_secret", // Use a fallback for local development
+      { expiresIn: "1h" }
+    );
 
-// Send the login notification email
-await sendMail(
-  user.email,
-  "Green Gear Admin Web Portal Login Confirmation",
-  `
-    <p>Hi ${user.username || "Admin"},</p>
-    <h3>Green Gear Admin Web Portal Login Confirmation</h3>
-    <p>
-      Please be informed that your web portal account was accessed on ${currentDate}.
-      If you did not log on to your account at the time detailed above,
-      please call our contact centre on: 094613333.
-    </p>
-  `
-);
+    // Get current date and time
+    const currentDate = new Date().toLocaleString();
+
+    // Send the login notification email
+    try {
+      await sendMail(
+        admin.email,
+        "Green Gear Admin Web Portal Login Confirmation",
+        `
+          <p>Hi ${admin.username || "Admin"},</p>
+          <h3>Green Gear Admin Web Portal Login Confirmation</h3>
+          <p>
+            Please be informed that your web portal account was accessed on ${currentDate}.
+            If you did not log on to your account at the time detailed above,
+            please call our contact centre on: 094613333.
+          </p>
+        `
+      );
+    } catch (emailError) {
+      console.error("Failed to send login notification email:", emailError.message);
+      // Optionally: Notify the user that email delivery failed
+    }
+
     res.status(200).json({ message: "Login successful", token });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Login error:", error.message);
+    res.status(500).json({ error: "An unexpected error occurred. Please try again later." });
   }
 };
 // Forgot Password Request

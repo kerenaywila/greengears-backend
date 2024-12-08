@@ -2,8 +2,10 @@ const bcryptjs = require("bcryptjs")
 const Booking = require("../models/booking");
 const Equipment = require("../models/equipment");
 const Farmer = require('../models/users');
+const Add_To_Cart = require('../models/addToCart');
 const mongoose = require("mongoose");
 const moment = require('moment');
+const sendMail = require('../utils/mailer');
 
 
 // Create Booking
@@ -12,6 +14,8 @@ exports.createBooking = async (req, res) => {
     const {
       customer_id,
       equipment_id,
+      location,
+      deliveryDetail,
       rental_date,
       return_date,
       status,
@@ -33,12 +37,21 @@ exports.createBooking = async (req, res) => {
            message: 'Equipment not found.',
          });
        }
-  
-    // Check if the equipment is in stock
-  
 if (equipment.available !== true) {
+
+  // Fetch admin email
+const adminEmail = process.env.AdminEmail;
+
+
+// Send email to admin
+await sendMail(
+  adminEmail,
+  "Out of Stock",
+  `<p>The Product with ID number <strong>${equipment_id}</strong> is out of stock.</p>`
+);
   return res.status(400).json({
-    message: 'Equipment is out of stock.',
+    message: 'Equipment is out of stock. Please call back in 2 days'
+  
   });
 }
     // Calculate the rental duration in days
@@ -70,8 +83,29 @@ if (equipment.available !== true) {
 
 // Calculate rental cost using equipment's daily rate
 const rental_cost = rentalDuration * equipment.price;
-  
 
+// Define doorstep pickup costs
+const doorstepCosts = {
+  Ijebu: 1000,
+  Ore: 1500,
+  Ibadan: 2000,
+};
+
+let Total_rental_cost;
+
+if (deliveryDetail.stationPickUp === true) {
+  // No additional cost for station pickup
+  Total_rental_cost = rental_cost;
+} else if (deliveryDetail.doorPickUp in doorstepCosts) {
+  // Add the appropriate doorstep cost
+  Total_rental_cost = rental_cost + doorstepCosts[deliveryDetail.doorPickUp];
+} else {
+  // Handle invalid delivery details
+  return res.status(400).json({
+    message: "Invalid delivery detail. Please set your delivery detail to continue booking.",
+  });
+}
+  
      // Generate unique Rental ID for Tracking
      const generateRentalID = async (existingIDs) => {
       const letters = "abcdefghijklmnopqrstuvwxyz";
@@ -103,12 +137,21 @@ const rental_cost = rentalDuration * equipment.price;
       rental_id,
       customer_id,
       equipment_id,
+      location,
+      deliveryDetail,
       rental_date,
       return_date,
       rental_duration: rentalDuration,
-      rental_cost,
+      rental_cost: Total_rental_cost,
       status,
     });
+
+// Update the equipment availability to false after it has been booked
+      await Equipment.updateOne(
+        { equipment_id },
+        { available: false }
+      );
+
     // Save booking to database (mocked here, replace with actual DB save logic)
     // Example: const savedBooking = await Booking.create(booking);
     // const savedBooking = { id: 1, ...booking }; // Mocked response
@@ -133,116 +176,22 @@ const rental_cost = rentalDuration * equipment.price;
       }
     };
 
-// exports.createBooking = async (req, res) => {
+// Approve Booking
+// exports.approveBooking = async (req, res) => {
 //   try {
-//     const {
-//       customer_id,
-//       // rental_frequency,
-//       equipment_type,
-//       rental_duration,
-//       rental_cost,
-//       // customer_rating,
-//       rental_date,
-//       return_date,
-//       status,
-//     } = req.body;
-
-  
-//         // Validate rental_date and return_date
-//         const now = new Date();
-//         const rentalDate = new Date(rental_date);
-//         const returnDate = new Date(return_date);
+//     const { rental_id } = req.params;
+//     const booking = await Booking.findOneAndUpdate(
+//       { rental_id },
+//       { status: "approved" },
+//       { new: true }
+//     );
     
-//         if (rentalDate <= now) {
-//           return res.status(400).json({
-//             success: false,
-//             message: "Your selected booking start date has passed. Please select a valid start date.",
-//           });
-//         }
-    
-//         if (returnDate <= rentalDate) {
-//           return res.status(400).json({
-//             success: false,
-//             message: "The return date must be after the rental start date.",
-//           });
-//         }
-
-//      // Generate unique Rental ID for Tracking
-//     const generateRentalID = async (existingIDs) => {
-//       const letters = "abcdefghijklmnopqrstuvwxyz";
-//       const numbers = "0123456789";
-    
-//       let newID;
-//       do {
-//           const randomLetters = Array.from({ length: 3 }, () =>
-//               letters.charAt(Math.floor(Math.random() * letters.length))
-//           ).join("");
-    
-//           const randomNumbers = Array.from({ length: 3 }, () =>
-//               numbers.charAt(Math.floor(Math.random() * numbers.length))
-//           ).join("");
-    
-//           newID = `Rent${randomNumbers}${randomLetters}`;
-//       } while (existingIDs.includes(newID)); // Ensure unique ID
-    
-//       return newID;
-//     };
-    
-
-//     // Generate unique customer ID
-//     const existingIDs = await Booking.distinct("rental_id");
-//     const rental_id = await generateRentalID(existingIDs);
-
-   
-
-      
-//     // Create the booking
-//     const booking = await Booking.create({
-      
-//       rental_id,
-//       customer_id, // Custmer ID generated during sign up
-//       // rental_frequency,
-//       equipment_type,
-//       rental_duration,
-//       rental_cost,
-//       // customer_rating,
-//       rental_date,
-//       return_date,
-//       status,
-//     });
-
-
-//     // Respond with success
-//     return res.status(201).json({
-//       message: "Booking created successfully",
-//       booking,
-//     });
+//     if (!booking) return res.status(404).json({ message: "Booking not found" });
+//     res.json({ message: "Booking approved", booking });
 //   } catch (error) {
-//     console.error("Error creating booking:", error.message); // Improved debugging log
-//     return res.status(500).json({
-//       message: "Error creating booking",
-//       error: error.message,
-//     });
+//     res.status(500).json({ message: "Error approving booking", error });
 //   }
 // };
-
-
-// Approve Booking
-exports.approveBooking = async (req, res) => {
-  try {
-    const { rental_id } = req.params;
-    const booking = await Booking.findOneAndUpdate(
-      { rental_id },
-      { status: "approved" },
-      { new: true }
-    );
-    
-    if (!booking) return res.status(404).json({ message: "Booking not found" });
-    res.json({ message: "Booking approved", booking });
-  } catch (error) {
-    res.status(500).json({ message: "Error approving booking", error });
-  }
-};
 
 // Cancel Booking
 
@@ -345,6 +294,60 @@ exports.deleteCanceledBooking = async (req, res) => {
       message: "An error occurred while deleting the booking",
       error: error.message,
     });
+  }
+};
+
+exports.addToCart = async (req, res) => {
+  try {
+    const { customer_id, equipment_id, quantity } = req.body;
+
+    // Validate input
+    if (!customer_id || !equipment_id || quantity <= 0) {
+      return res.status(400).json({ success: false, message: "Invalid input data" });
+    }
+
+    // Check if customer exists and fetch or create their cart
+    let cart = await Add_To_Cart.findOne({ customer_id });
+    if (!cart) {
+      cart = await Add_To_Cart.create({ customer_id, items: [], totalPrice: 0 });
+    }
+
+    // Fetch equipment details
+    const product = await Equipment.findOne({ equipment_id });
+    if (!product) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+
+    // Check if the product is already in the cart
+    const itemIndex = cart.items.findIndex(item => item.equipment_id === equipment_id);
+    if (itemIndex > -1) {
+      // Update the existing item's quantity and total price
+      cart.items[itemIndex].quantity += quantity;
+      cart.items[itemIndex].totalPrice = cart.items[itemIndex].quantity * cart.items[itemIndex].price;
+    } else {
+      // Add the new item to the cart
+      cart.items.push({
+        equipment_id,
+        name: product.product_name,
+        quantity,
+        price: product.price,
+        totalPrice: quantity * product.price,
+      });
+    }
+
+    // Recalculate total cart price
+    cart.totalPrice = cart.items.reduce((sum, item) => sum + item.totalPrice, 0);
+
+    // Save the updated cart
+    await cart.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Item added to cart successfully",
+      cart,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server error", error: error.message });
   }
 };
 
@@ -479,3 +482,99 @@ async function updateBookingRefundStatus(rental_id, refundId, rental_cost) {
         throw new Error('Database update failed.');
     }
 }
+
+
+
+// exports.createBooking = async (req, res) => {
+//   try {
+//     const {
+//       customer_id,
+//       // rental_frequency,
+//       equipment_type,
+//       rental_duration,
+//       rental_cost,
+//       // customer_rating,
+//       rental_date,
+//       return_date,
+//       status,
+//     } = req.body;
+
+  
+//         // Validate rental_date and return_date
+//         const now = new Date();
+//         const rentalDate = new Date(rental_date);
+//         const returnDate = new Date(return_date);
+    
+//         if (rentalDate <= now) {
+//           return res.status(400).json({
+//             success: false,
+//             message: "Your selected booking start date has passed. Please select a valid start date.",
+//           });
+//         }
+    
+//         if (returnDate <= rentalDate) {
+//           return res.status(400).json({
+//             success: false,
+//             message: "The return date must be after the rental start date.",
+//           });
+//         }
+
+//      // Generate unique Rental ID for Tracking
+//     const generateRentalID = async (existingIDs) => {
+//       const letters = "abcdefghijklmnopqrstuvwxyz";
+//       const numbers = "0123456789";
+    
+//       let newID;
+//       do {
+//           const randomLetters = Array.from({ length: 3 }, () =>
+//               letters.charAt(Math.floor(Math.random() * letters.length))
+//           ).join("");
+    
+//           const randomNumbers = Array.from({ length: 3 }, () =>
+//               numbers.charAt(Math.floor(Math.random() * numbers.length))
+//           ).join("");
+    
+//           newID = `Rent${randomNumbers}${randomLetters}`;
+//       } while (existingIDs.includes(newID)); // Ensure unique ID
+    
+//       return newID;
+//     };
+    
+
+//     // Generate unique customer ID
+//     const existingIDs = await Booking.distinct("rental_id");
+//     const rental_id = await generateRentalID(existingIDs);
+
+   
+
+      
+//     // Create the booking
+//     const booking = await Booking.create({
+      
+//       rental_id,
+//       customer_id, // Custmer ID generated during sign up
+//       // rental_frequency,
+//       equipment_type,
+//       rental_duration,
+//       rental_cost,
+//       // customer_rating,
+//       rental_date,
+//       return_date,
+//       status,
+//     });
+
+
+//     // Respond with success
+//     return res.status(201).json({
+//       message: "Booking created successfully",
+//       booking,
+//     });
+//   } catch (error) {
+//     console.error("Error creating booking:", error.message); // Improved debugging log
+//     return res.status(500).json({
+//       message: "Error creating booking",
+//       error: error.message,
+//     });
+//   }
+// };
+
