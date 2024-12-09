@@ -10,6 +10,7 @@ const user_router = require('./src/routes/users');
 const admin_router = require('./src/routes/admin');
 const equipmentRoutes = require("./src/routes/equipment");
 const bookingRoutes = require("./src/routes/booking");
+const paymentRoutes = require("./src/routes/payment")
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.use('/api', user_router);
 app.use('/api', admin_router);
 app.use('/api', equipmentRoutes);
 app.use('/api', bookingRoutes);
+app.use('/api', paymentRoutes);
 
 // Error handling for undefined routes
 app.use((req, res) => {

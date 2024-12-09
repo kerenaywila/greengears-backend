@@ -354,7 +354,7 @@ exports.addToCart = async (req, res) => {
 
 // Environment variables
 const PAYMENT_GATEWAY_REFUND_URL = process.env.PAYMENT_GATEWAY_REFUND_URL; // e.g., https://api.paymentgateway.com/verify
-const PAYMENT_GATEWAY_SECRET_KEY = process.env.PAYMENT_GATEWAY_SECRET_KEY; // Secret key for gateway authentication
+const FLUTTERWAVE_SECRET_KEY = process.env.FLUTTERWAVE_SECRET_KEY; // Secret key for gateway authentication
 
 
 
@@ -366,7 +366,7 @@ exports.refundCancelBooking = async (req, res) => {
 
     try {
         // Validate environment variables
-        if (!PAYMENT_GATEWAY_REFUND_URL || !PAYMENT_GATEWAY_SECRET_KEY) {
+        if (!PAYMENT_GATEWAY_REFUND_URL || !FLUTTERWAVE_SECRET_KEY) {
             console.error('Payment gateway configuration missing.');
             return res.status(500).json({
                 status: 'error',
@@ -404,16 +404,15 @@ exports.refundCancelBooking = async (req, res) => {
         let refundResponse;
         for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
             try {
-                const response = await axios.post(
-                    PAYMENT_GATEWAY_REFUND_URL,
-                    {
-                        transaction_id: transactionId,
-                        rental_cost,
-                        reason: reason || 'Booking canceled',
+            
+                const response = await flw.Transaction.refund({
+                  id: transactionId,
+                  amount: rental_cost,
+                  reason: reason || 'Booking canceled',
                     },
                     {
                         headers: {
-                            Authorization: `Bearer ${PAYMENT_GATEWAY_SECRET_KEY}`,
+                            Authorization: `Bearer ${FLUTTERWAVE_SECRET_KEY}`,
                         },
                     }
                 );
