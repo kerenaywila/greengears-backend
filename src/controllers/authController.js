@@ -65,11 +65,12 @@ exports.user_signup = async (req, res) => {
          // Generate unique customer ID
          const existingIDs = await Farmer.distinct("customer_id");
          const customer_id = await generateCustomerID(existingIDs);
+         
         // Example usage
-        (async () => {
-          const existingIDs = ["CUS123ABC", "CUS456DEF"]; // Replace with a DB query
-          console.log(await generateCustomerID(existingIDs));
-        })();
+        // (async () => {
+        //   const existingIDs = ["CUS123ABC", "CUS456DEF"]; // Replace with a DB query
+        //   console.log(await generateCustomerID(existingIDs));
+        // })();
         
         // Create new user and hash password
         user = new Farmer({

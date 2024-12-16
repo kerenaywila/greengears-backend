@@ -19,6 +19,7 @@ exports.createBooking = async (req, res) => {
       rental_date,
       return_date,
       status,
+      payment_status,
     } = req.body;
 
     // Fetch Renter details from the database
@@ -144,6 +145,7 @@ if (deliveryDetail.stationPickUp === true) {
       rental_duration: rentalDuration,
       rental_cost: Total_rental_cost,
       status,
+      payment_status,
     });
 
 // Update the equipment availability to false after it has been booked
@@ -197,7 +199,7 @@ if (deliveryDetail.stationPickUp === true) {
 
 const BOOKING_STATUS = {
   CANCELED: "canceled",
-  CONFIRMED: "confirmed",
+  CONFIRMED: "successful",
   PENDING: "pending",
 };
 
@@ -384,7 +386,7 @@ exports.refundCancelBooking = async (req, res) => {
         }
 
         // Check if the booking is eligible for a refund
-        if (booking.status !== BOOKING_STATUS.CANCELED) {
+        if (booking.payment_status!== BOOKING_STATUS.CONFIRMED) {
             return res.status(400).json({
                 status: 'error',
                 message: 'Booking is not eligible for a refund.',

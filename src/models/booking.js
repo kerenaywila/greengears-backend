@@ -39,6 +39,12 @@ const rentalSchema = new mongoose.Schema({
             enum: ["pending", "approved", "canceled", "returned", "overdue", "in-progress"], 
             default: "approved" 
         },
+
+        payment_status: { 
+            type: String, 
+            enum: ["pending", "successful", "canceled", ], 
+            default: "pending" 
+        },
     },
     { timestamps: true } // Automatically adds createdAt and updatedAt
 );
