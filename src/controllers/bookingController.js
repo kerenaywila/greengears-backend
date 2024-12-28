@@ -50,7 +50,7 @@ await sendMail(
   "Out of Stock",
   `<p>The Product with ID number <strong>${equipment_id}</strong> is out of stock.</p>`
 );
-  return res.status(400).json({
+  return res.status(200).json({
     message: 'Equipment is out of stock. Please call back in 2 days'
   
   });
@@ -154,6 +154,24 @@ if (deliveryDetail.stationPickUp === true) {
         { available: false }
       );
 
+          // Send email to the user with booking details
+    const userEmail = renter.email; // Assuming the renter object has an 'email' field
+    const subject = "Booking Confirmation - Rent Now";
+    const htmlContent = `
+      <p>Hello ${renter.name},</p>
+      <p>Your booking has been successfully created. Below are your booking details:</p>
+      <ul>
+        <li><strong>Rental ID:</strong> ${rental_id}</li>
+        <li><strong>Equipment:</strong> ${equipment.name}</li>
+        <li><strong>Rental Duration:</strong> ${rentalDuration} days</li>
+        <li><strong>Total Rental Cost:</strong> $${Total_rental_cost}</li>
+        <li><strong>Delivery:</strong> ${deliveryDetail.stationPickUp ? 'Station Pickup' : 'Doorstep Pickup'}</li>
+      </ul>
+      <p>Thank you for choosing Rent Now!</p>
+    `;
+
+    // Send confirmation email to the user
+    await sendMail(userEmail, subject, htmlContent);
     // Save booking to database (mocked here, replace with actual DB save logic)
     // Example: const savedBooking = await Booking.create(booking);
     // const savedBooking = { id: 1, ...booking }; // Mocked response

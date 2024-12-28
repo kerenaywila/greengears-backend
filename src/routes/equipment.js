@@ -1,5 +1,5 @@
 const express = require("express");
-const { equi_Search_Filter_Fxn, getSingleEquipment, createEquipment, updateEquipment, deleteEquipment } = require("../controllers/equipmentController");
+const { equi_Search_Filter_Fxn, getSingleEquipment, getAllEquipment, getEquipmentByCategory, createEquipment, updateEquipment, deleteEquipment } = require("../controllers/equipmentController");
 const {validateEquipmentUpdate} = require('../middleware/auth')
 const upload = require("../utils/multerConfig"); // Image upload middleware
 
@@ -12,9 +12,14 @@ router.post("/equipment",  createEquipment); // Allow up to 5 images
 // GET /api/equipment?page=1&limit=10&type=example&minPrice=100&maxPrice=500&location=NewYork
 router.get("/equipment/pagination", equi_Search_Filter_Fxn);
 
-// Get/search equipment
-router.post("/single/equipment_id", getSingleEquipment);
+// Get/search single equipment
+router.get("/equipment/:id", getSingleEquipment);
 
+// Get/search all equipment
+router.post("/equipment/all", getAllEquipment)
+
+// Get/search equipment by categories
+router.post("/equipmet/categories", getEquipmentByCategory)
 // PUT /api/equipment/:id (Update equipment)
 // router.put("/equipment/:id", upload.array('images', 5), updateEquipment); // Allow up to 5 images
 router.put("/equipment/update", validateEquipmentUpdate, updateEquipment); // Allow up to 5 images

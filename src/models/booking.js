@@ -14,8 +14,8 @@ const rentalSchema = new mongoose.Schema({
       address: { type: String, required: true },
         },
       deliveryDetail: {
-        stationPickUp :{type: Boolean, required: true, default: true},
-        doorPickUp:{type: String, required: true}
+        stationPickUp :{type: Boolean,  default: true},
+        doorPickUp:{type: String, }
       },
       rental_duration: { type: Number, required: true }, // Duration in days or weeks
       rental_cost: { type: Number, required: true , min: 0}, // Total cost of the rental

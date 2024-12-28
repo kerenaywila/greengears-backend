@@ -103,10 +103,10 @@ exports.user_signup = async (req, res) => {
 // OTP Verification Controller for User
 exports.verifyOTP_user = async (req, res) => {
     try {
-        const { email, otp } = req.body;
+        const {otp } = req.body;
 
-        // Find user by email
-        const user = await Farmer.findOne({ email });
+        // // Find user by email
+        const user = await Farmer.findOne({ otp });
         if (!user) {
             return res.status(400).json({ success: false, message: "User not found" });
         }
@@ -118,6 +118,7 @@ exports.verifyOTP_user = async (req, res) => {
 
         // Mark user as verified and reset OTP fields
         user.isVerified = true;
+        user.isActive = true;
         user.otp = undefined;
         user.otpExpires = undefined;
 
@@ -126,7 +127,7 @@ exports.verifyOTP_user = async (req, res) => {
         // Send welcome email
         try {
             await sendMail(
-                email,
+                user.email,
                 "Welcome to Agricultural Equipment Rental Platform",
                 `<p>Hi ${user.name}, welcome to our platform!</p>
                  <p>Your Customer ID is <strong>${user.customer_id}</strong>.</p>`
@@ -357,7 +358,7 @@ await sendMail(
   "Green Gear Web Portal Login Confirmation",
   `
     <p>Hi ${user.name || "Renter"},</p>
-    <h3>Green Gear Admin Web Portal Login Confirmation</h3>
+    <h3>Green Gear Web Portal Login Confirmation</h3>
     <p>
       Please be informed that your web portal account was accessed on ${currentDate}.
       If you did not log on to your account at the time detailed above,
@@ -437,13 +438,15 @@ exports.forgotPassword = async (req, res) => {
     const resetToken = user.generateResetToken();
     await user.save({ validateBeforeSave: false });
 
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+    const resetUrl = `http://localhost:5173/NewPassword?token=${resetToken}`;
 
     // Send email with the reset link
     await sendMail(
       user.email,
       "Password Reset Request",
-      `<p>You requested a password reset. Click the link below to reset your password:</p><a href="${resetUrl}">Reset Password</a>${user.resetPasswordToken}`
+      `<p>You requested a password reset. Click the link below to reset your password:</p>
+      <a href="${resetUrl}">Reset Password</a>
+      <p>Here is your secret code. Don't disclose it! Secret code: ${user.resetPasswordToken}</p>`
     );
 
     return res.status(200).json({ message: "Password reset link sent to email" });
